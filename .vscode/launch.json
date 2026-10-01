@@ -1,0 +1,12 @@
+{
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Sgt (Spring Boot)",
+      "request": "launch",
+      "mainClass": "lat.soulware.sgt.SgtApplication",
+      "projectName": "sgt",
+      "envFile": "${workspaceFolder}/.env"
+    }
+  ]
+}
