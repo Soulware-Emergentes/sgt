@@ -8,7 +8,7 @@ Java 25, Spring Boot 4.1, Spring Modulith 2.1.
 
 Docker has to be available for `./mvnw verify`. That half of the suite starts a throwaway Postgres container, so nothing needs to be installed or running beforehand, and it never touches a local database.
 
-Running the application needs a local Postgres instance you provision yourself.
+Running the application needs a local Postgres instance you provision yourself, with the PostGIS extension installed (on Fedora, the `postgis` package). The setup script below creates the extension in the database, but the binaries have to be present first.
 
 ## Setting up a local database
 
