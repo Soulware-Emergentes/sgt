@@ -8,11 +8,11 @@ import lat.soulware.sgt.monitoring.application.commands.fieldsheets.intent.Rejec
 import lat.soulware.sgt.monitoring.application.commands.fieldsheets.intent.RelinkFieldSheet;
 import lat.soulware.sgt.monitoring.application.commands.fieldsheets.intent.SubmitFieldSheet;
 import lat.soulware.sgt.monitoring.application.queries.fieldsheets.criteria.FieldSheetById;
-import lat.soulware.sgt.monitoring.application.queries.fieldsheets.criteria.FieldSheetsInStatus;
+import lat.soulware.sgt.monitoring.application.queries.fieldsheets.criteria.FieldSheetsPage;
 import lat.soulware.sgt.monitoring.application.queries.fieldsheets.criteria.ScanOfFieldSheet;
 import lat.soulware.sgt.monitoring.application.queries.fieldsheets.criteria.ScanUploadSlot;
 import lat.soulware.sgt.monitoring.application.queries.fieldsheets.results.FieldSheetResult;
-import lat.soulware.sgt.monitoring.application.queries.fieldsheets.results.FieldSheetsResult;
+import lat.soulware.sgt.monitoring.application.queries.fieldsheets.results.FieldSheetsPageResult;
 import lat.soulware.sgt.monitoring.application.queries.fieldsheets.results.ScanLinkResult;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.EvaluationDate;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.MeasurementUnit;
@@ -28,7 +28,7 @@ import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.requests.SubmitFi
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.requests.SupplyRequest;
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.FieldSheetResponse;
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.FieldSheetSummaryResponse;
-import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.FieldSheetsResponse;
+import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.FieldSheetsPageResponse;
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.ScanLinkResponse;
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.SupplyResponse;
 import lat.soulware.sgt.monitoring.publishedlanguage.FieldSheetId;
@@ -94,8 +94,29 @@ public final class FieldSheetWireMapper implements WireMapper {
         return new RelinkFieldSheet(new FieldSheetId(fieldSheetId), new TaskCode(request.taskCode()));
     }
 
-    public static FieldSheetsInStatus toFieldSheetsInStatus(String status) {
-        return new FieldSheetsInStatus(status);
+    /** Blank filters, as a table sends an emptied field, match everything like absent ones. */
+    public static FieldSheetsPage toFieldSheetsPage(
+        String status,
+        String code,
+        String taskCode,
+        String submittedFrom,
+        String submittedTo,
+        String sort,
+        String direction,
+        int page,
+        int size
+    ) {
+        return new FieldSheetsPage(
+            FieldSheetWireMapper.blankToNull(status),
+            FieldSheetWireMapper.blankToNull(code),
+            FieldSheetWireMapper.blankToNull(taskCode),
+            FieldSheetWireMapper.blankToNull(submittedFrom),
+            FieldSheetWireMapper.blankToNull(submittedTo),
+            sort,
+            direction,
+            page,
+            size
+        );
     }
 
     public static FieldSheetById toFieldSheetById(UUID fieldSheetId) {
@@ -110,8 +131,8 @@ public final class FieldSheetWireMapper implements WireMapper {
         return new ScanUploadSlot();
     }
 
-    public static FieldSheetsResponse toFieldSheetsResponse(FieldSheetsResult result) {
-        return new FieldSheetsResponse(result.fieldSheets().stream()
+    public static FieldSheetsPageResponse toFieldSheetsPageResponse(FieldSheetsPageResult result) {
+        List<FieldSheetSummaryResponse> content = result.content().stream()
             .map(fieldSheet -> new FieldSheetSummaryResponse(
                 fieldSheet.id(),
                 fieldSheet.code(),
@@ -120,7 +141,14 @@ public final class FieldSheetWireMapper implements WireMapper {
                 fieldSheet.submittedBy(),
                 fieldSheet.submissionDate()
             ))
-            .toList()
+            .toList();
+
+        return new FieldSheetsPageResponse(
+            content,
+            result.totalPages(),
+            result.totalElements(),
+            result.actualPage(),
+            result.pageSize()
         );
     }
 
@@ -148,6 +176,11 @@ public final class FieldSheetWireMapper implements WireMapper {
 
     public static ScanLinkResponse toScanLinkResponse(ScanLinkResult result) {
         return new ScanLinkResponse(result.key(), result.url(), result.expiresAt());
+    }
+
+    private static String blankToNull(String value) {
+        boolean isBlank = value == null || value.isBlank();
+        return isBlank ? null : value;
     }
 
     private static Supply toSupply(SupplyRequest request) {

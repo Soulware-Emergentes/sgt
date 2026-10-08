@@ -19,7 +19,7 @@ import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.requests.ApproveF
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.requests.RelinkFieldSheetRequest;
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.requests.SubmitFieldSheetRequest;
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.FieldSheetResponse;
-import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.FieldSheetsResponse;
+import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.FieldSheetsPageResponse;
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.ScanLinkResponse;
 import lat.soulware.sgt.monitoring.publishedlanguage.FieldSheetId;
 import lat.soulware.sgt.shared.interfaces.rest.security.Caller;
@@ -67,11 +67,35 @@ public class FieldSheetController {
         return this.fieldSheet(submitted.value());
     }
 
+    /**
+     * One page of field sheets for a table: every filter optional, newest submission first unless
+     * sorted otherwise.
+     */
     @GetMapping("/field-sheets")
-    public FieldSheetsResponse inStatus(@RequestParam String status) {
-        return FieldSheetWireMapper.toFieldSheetsResponse(
-            this.fieldSheetQueryService.inStatus(FieldSheetWireMapper.toFieldSheetsInStatus(status))
-        );
+    public FieldSheetsPageResponse page(
+        @RequestParam(required = false) String status,
+        @RequestParam(required = false) String code,
+        @RequestParam(required = false) String taskCode,
+        @RequestParam(required = false) String submittedFrom,
+        @RequestParam(required = false) String submittedTo,
+        @RequestParam(defaultValue = "submittedAt") String sort,
+        @RequestParam(defaultValue = "desc") String direction,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size
+    ) {
+        return FieldSheetWireMapper.toFieldSheetsPageResponse(this.fieldSheetQueryService.page(
+            FieldSheetWireMapper.toFieldSheetsPage(
+                status,
+                code,
+                taskCode,
+                submittedFrom,
+                submittedTo,
+                sort,
+                direction,
+                page,
+                size
+            )
+        ));
     }
 
     @GetMapping("/field-sheets/{fieldSheetId}")
