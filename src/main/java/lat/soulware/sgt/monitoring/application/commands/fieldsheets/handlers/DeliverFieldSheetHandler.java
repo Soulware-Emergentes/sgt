@@ -38,7 +38,7 @@ public class DeliverFieldSheetHandler implements CommandHandler {
         DeliveryOutcome outcome = this.taskLedger.registerDelivery(
             fieldSheet.getTaskCode(),
             fieldSheet.getId(),
-            new ExecutionDate(fieldSheet.getSubmissionDate().toLocalDate())
+            new ExecutionDate(fieldSheet.getSubmissionDate().value().toLocalDate())
         );
         if (outcome == DeliveryOutcome.ACCEPTED) {
             fieldSheet.recordDeliveryAccepted();

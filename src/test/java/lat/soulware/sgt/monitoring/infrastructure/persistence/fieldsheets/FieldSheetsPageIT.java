@@ -25,6 +25,7 @@ import lat.soulware.sgt.monitoring.domain.model.valueobjects.FieldSheetCode;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.FieldSheetScan;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.FieldSheetStatus;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.ScanKey;
+import lat.soulware.sgt.monitoring.domain.model.valueobjects.SubmissionDate;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.SubmissionYear;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.TaskCode;
 import lat.soulware.sgt.monitoring.domain.repositories.FieldSheetRepository;
@@ -162,7 +163,7 @@ class FieldSheetsPageIT extends PostgresIntegrationTest {
             null,
             new FieldSheetScan(new ScanKey("field-sheets/%d-%d.pdf".formatted(year, number)), 1024),
             new FieldAgentId(UUID.randomUUID()),
-            submitted,
+            new SubmissionDate(submitted),
             null,
             null
         );

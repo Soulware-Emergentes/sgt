@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lat.soulware.sgt.monitoring.application.commands.fieldsheets.intent.SubmitFieldSheet;
 import lat.soulware.sgt.monitoring.domain.model.aggregates.FieldSheet;
+import lat.soulware.sgt.monitoring.domain.model.valueobjects.SubmissionDate;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.SubmissionYear;
 import lat.soulware.sgt.monitoring.domain.repositories.FieldSheetRepository;
 import lat.soulware.sgt.monitoring.domain.services.ScanStore;
@@ -36,14 +37,14 @@ public class SubmitFieldSheetHandler implements CommandHandler {
     }
 
     public FieldSheetId handle(SubmitFieldSheet command) {
-        LocalDateTime submissionDate = LocalDateTime.now();
+        SubmissionDate submissionDate = new SubmissionDate(LocalDateTime.now());
         FieldSheet fieldSheet = FieldSheet.submit(
             new FieldSheetId(UUID.randomUUID()),
             command.taskCode(),
             this.scanStore.inspect(command.scanKey()),
             command.submittedBy(),
             submissionDate,
-            this.fieldSheetRepository.findLastSubmittedIn(SubmissionYear.of(submissionDate))
+            this.fieldSheetRepository.findLastSubmittedIn(SubmissionYear.of(submissionDate.value()))
         );
 
         return this.fieldSheetRepository.save(fieldSheet).getId();

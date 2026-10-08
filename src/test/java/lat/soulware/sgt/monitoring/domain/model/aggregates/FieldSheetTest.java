@@ -17,15 +17,18 @@ import lat.soulware.sgt.monitoring.domain.model.events.FieldSheetRejected;
 import lat.soulware.sgt.monitoring.domain.model.events.FieldSheetSubmitted;
 import lat.soulware.sgt.monitoring.domain.model.exceptions.FieldSheetAlreadyReviewedException;
 import lat.soulware.sgt.monitoring.domain.model.exceptions.FieldSheetNotDeliveredException;
-import lat.soulware.sgt.monitoring.domain.model.exceptions.FieldSheetNumbersExhaustedException;
-import lat.soulware.sgt.monitoring.domain.model.exceptions.ReviewerIsSubmitterException;
 import lat.soulware.sgt.monitoring.domain.model.exceptions.FieldSheetNotSubmittedException;
+import lat.soulware.sgt.monitoring.domain.model.exceptions.FieldSheetNumbersExhaustedException;
 import lat.soulware.sgt.monitoring.domain.model.exceptions.InvalidTaskCodeException;
 import lat.soulware.sgt.monitoring.domain.model.exceptions.MissingBeneficiaryException;
+import lat.soulware.sgt.monitoring.domain.model.exceptions.ReviewerIsSubmitterException;
+import lat.soulware.sgt.monitoring.domain.model.valueobjects.EvaluationDate;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.FieldSheetCode;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.FieldSheetScan;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.FieldSheetStatus;
+import lat.soulware.sgt.monitoring.domain.model.valueobjects.ReviewDate;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.ScanKey;
+import lat.soulware.sgt.monitoring.domain.model.valueobjects.SubmissionDate;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.SubmissionYear;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.TaskCode;
 import lat.soulware.sgt.monitoring.publishedlanguage.FieldSheetApproved;
@@ -84,7 +87,7 @@ class FieldSheetTest {
     void approvingAnnouncesTheApprovedFieldSheet() {
         FieldSheet fieldSheet = reviewable();
 
-        fieldSheet.approve(REVIEWER, SUBMITTED_ON.plusDays(1), BENEFICIARY, List.of(), SUBMITTED_ON.minusDays(1), null);
+        fieldSheet.approve(REVIEWER, new ReviewDate(SUBMITTED_ON.plusDays(1)), BENEFICIARY, List.of(), new EvaluationDate(SUBMITTED_ON.minusDays(1)), null);
 
         List<DomainEvent> events = fieldSheet.pullDomainEvents();
         assertEquals(1, events.size());
@@ -96,7 +99,7 @@ class FieldSheetTest {
     void rejectingAnnouncesTheRejectedFieldSheet() {
         FieldSheet fieldSheet = reviewable();
 
-        fieldSheet.reject(REVIEWER, SUBMITTED_ON.plusDays(1));
+        fieldSheet.reject(REVIEWER, new ReviewDate(SUBMITTED_ON.plusDays(1)));
 
         List<DomainEvent> events = fieldSheet.pullDomainEvents();
         assertEquals(1, events.size());
@@ -107,8 +110,8 @@ class FieldSheetTest {
     void aFieldSheetIsReviewedOnlyOncePoiAcceptsItsDelivery() {
         FieldSheet fieldSheet = submitted();
 
-        assertThrows(FieldSheetNotDeliveredException.class, () -> fieldSheet.approve(REVIEWER, SUBMITTED_ON.plusDays(1), BENEFICIARY, List.of(), SUBMITTED_ON.minusDays(1), null));
-        assertThrows(FieldSheetNotDeliveredException.class, () -> fieldSheet.reject(REVIEWER, SUBMITTED_ON.plusDays(1)));
+        assertThrows(FieldSheetNotDeliveredException.class, () -> fieldSheet.approve(REVIEWER, new ReviewDate(SUBMITTED_ON.plusDays(1)), BENEFICIARY, List.of(), new EvaluationDate(SUBMITTED_ON.minusDays(1)), null));
+        assertThrows(FieldSheetNotDeliveredException.class, () -> fieldSheet.reject(REVIEWER, new ReviewDate(SUBMITTED_ON.plusDays(1))));
     }
 
     @Test
@@ -118,7 +121,7 @@ class FieldSheetTest {
         fieldSheet.recordDeliveryRefused();
 
         assertEquals(FieldSheetStatus.VOIDED, fieldSheet.getStatus());
-        assertThrows(FieldSheetNotDeliveredException.class, () -> fieldSheet.approve(REVIEWER, SUBMITTED_ON.plusDays(1), BENEFICIARY, List.of(), SUBMITTED_ON.minusDays(1), null));
+        assertThrows(FieldSheetNotDeliveredException.class, () -> fieldSheet.approve(REVIEWER, new ReviewDate(SUBMITTED_ON.plusDays(1)), BENEFICIARY, List.of(), new EvaluationDate(SUBMITTED_ON.minusDays(1)), null));
     }
 
     @Test
@@ -142,9 +145,9 @@ class FieldSheetTest {
     @Test
     void aReviewedFieldSheetIsNotReviewedAgain() {
         FieldSheet fieldSheet = reviewable();
-        fieldSheet.approve(REVIEWER, SUBMITTED_ON.plusDays(1), BENEFICIARY, List.of(), SUBMITTED_ON.minusDays(1), null);
+        fieldSheet.approve(REVIEWER, new ReviewDate(SUBMITTED_ON.plusDays(1)), BENEFICIARY, List.of(), new EvaluationDate(SUBMITTED_ON.minusDays(1)), null);
 
-        assertThrows(FieldSheetAlreadyReviewedException.class, () -> fieldSheet.reject(REVIEWER, SUBMITTED_ON.plusDays(1)));
+        assertThrows(FieldSheetAlreadyReviewedException.class, () -> fieldSheet.reject(REVIEWER, new ReviewDate(SUBMITTED_ON.plusDays(1))));
     }
 
     @Test
@@ -171,10 +174,10 @@ class FieldSheetTest {
     void approvingStoresWhatTheReviewerConfirmed() {
         FieldSheet fieldSheet = reviewable();
 
-        fieldSheet.approve(REVIEWER, SUBMITTED_ON.plusDays(1), BENEFICIARY, List.of(), SUBMITTED_ON.minusDays(1), null);
+        fieldSheet.approve(REVIEWER, new ReviewDate(SUBMITTED_ON.plusDays(1)), BENEFICIARY, List.of(), new EvaluationDate(SUBMITTED_ON.minusDays(1)), null);
 
         assertEquals(BENEFICIARY, fieldSheet.getBeneficiaryLegalDocument());
-        assertEquals(SUBMITTED_ON.minusDays(1), fieldSheet.getEvaluationDate());
+        assertEquals(new EvaluationDate(SUBMITTED_ON.minusDays(1)), fieldSheet.getEvaluationDate());
     }
 
     @Test
@@ -183,7 +186,7 @@ class FieldSheetTest {
 
         assertThrows(
             MissingBeneficiaryException.class,
-            () -> fieldSheet.approve(REVIEWER, SUBMITTED_ON.plusDays(1), null, List.of(), SUBMITTED_ON, null)
+            () -> fieldSheet.approve(REVIEWER, new ReviewDate(SUBMITTED_ON.plusDays(1)), null, List.of(), new EvaluationDate(SUBMITTED_ON), null)
         );
         assertEquals(FieldSheetStatus.DELIVERED, fieldSheet.getStatus());
     }
@@ -201,7 +204,7 @@ class FieldSheetTest {
     void onlyAFieldSheetUnderReviewIsRelinked() {
         FieldSheet submitted = submitted();
         FieldSheet approved = reviewable();
-        approved.approve(REVIEWER, SUBMITTED_ON.plusDays(1), BENEFICIARY, List.of(), SUBMITTED_ON.minusDays(1), null);
+        approved.approve(REVIEWER, new ReviewDate(SUBMITTED_ON.plusDays(1)), BENEFICIARY, List.of(), new EvaluationDate(SUBMITTED_ON.minusDays(1)), null);
 
         assertThrows(FieldSheetNotDeliveredException.class, () -> submitted.relinkTo(OTHER_TASK));
         assertThrows(FieldSheetAlreadyReviewedException.class, () -> approved.relinkTo(OTHER_TASK));
@@ -214,8 +217,8 @@ class FieldSheetTest {
         GeneralManagementAssistantId submitterAsReviewer =
             new GeneralManagementAssistantId(fieldSheet.getSubmittedBy().value());
 
-        assertThrows(ReviewerIsSubmitterException.class, () -> fieldSheet.reject(submitterAsReviewer, SUBMITTED_ON.plusDays(1)));
-        assertThrows(ReviewerIsSubmitterException.class, () -> fieldSheet.approve(submitterAsReviewer, SUBMITTED_ON.plusDays(1), BENEFICIARY, List.of(), SUBMITTED_ON.minusDays(1), null));
+        assertThrows(ReviewerIsSubmitterException.class, () -> fieldSheet.reject(submitterAsReviewer, new ReviewDate(SUBMITTED_ON.plusDays(1))));
+        assertThrows(ReviewerIsSubmitterException.class, () -> fieldSheet.approve(submitterAsReviewer, new ReviewDate(SUBMITTED_ON.plusDays(1)), BENEFICIARY, List.of(), new EvaluationDate(SUBMITTED_ON.minusDays(1)), null));
     }
 
     private static FieldSheet reviewable() {
@@ -235,7 +238,7 @@ class FieldSheetTest {
             new TaskCode("2025-2030-01-03-0032"),
             new FieldSheetScan(new ScanKey("field-sheets/scan.pdf"), 1024),
             new FieldAgentId(UUID.randomUUID()),
-            submissionDate,
+            new SubmissionDate(submissionDate),
             lastOfYear
         );
     }
@@ -252,7 +255,7 @@ class FieldSheetTest {
             null,
             new FieldSheetScan(new ScanKey("field-sheets/scan.pdf"), 1024),
             new FieldAgentId(UUID.randomUUID()),
-            SUBMITTED_ON,
+            new SubmissionDate(SUBMITTED_ON),
             null,
             null
         );

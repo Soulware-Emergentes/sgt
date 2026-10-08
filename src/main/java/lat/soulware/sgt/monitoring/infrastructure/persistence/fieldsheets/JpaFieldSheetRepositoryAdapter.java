@@ -1,5 +1,6 @@
 package lat.soulware.sgt.monitoring.infrastructure.persistence.fieldsheets;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -11,12 +12,16 @@ import org.springframework.stereotype.Repository;
 
 import lat.soulware.sgt.monitoring.domain.model.aggregates.FieldSheet;
 import lat.soulware.sgt.monitoring.domain.model.exceptions.FieldSheetNotFoundException;
+import lat.soulware.sgt.monitoring.domain.model.valueobjects.EvaluationDate;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.FieldSheetCode;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.FieldSheetScan;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.FieldSheetStatus;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.MeasurementUnit;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.Quantity;
+import lat.soulware.sgt.monitoring.domain.model.valueobjects.ReviewDate;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.ScanKey;
+import lat.soulware.sgt.monitoring.domain.model.valueobjects.SecurementDate;
+import lat.soulware.sgt.monitoring.domain.model.valueobjects.SubmissionDate;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.SubmissionYear;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.Supply;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.SupplyName;
@@ -63,6 +68,18 @@ public class JpaFieldSheetRepositoryAdapter
         UUID reviewedBy = isReviewed
             ? aggregate.getReviewedBy().value()
             : null;
+        boolean hasReviewDate = aggregate.getReviewDate() != null;
+        LocalDateTime reviewDate = hasReviewDate
+            ? aggregate.getReviewDate().value()
+            : null;
+        boolean isEvaluated = aggregate.getEvaluationDate() != null;
+        LocalDateTime evaluationDate = isEvaluated
+            ? aggregate.getEvaluationDate().value()
+            : null;
+        boolean statesSecurement = aggregate.getSecurementDate() != null;
+        LocalDateTime securementDate = statesSecurement
+            ? aggregate.getSecurementDate().value()
+            : null;
         BeneficiaryLegalDocument beneficiary = aggregate.getBeneficiaryLegalDocument();
         boolean namesABeneficiary = Objects.nonNull(beneficiary);
         String beneficiaryDocumentType = namesABeneficiary
@@ -85,15 +102,15 @@ public class JpaFieldSheetRepositoryAdapter
             aggregate.getTaskCode().value(),
             beneficiaryDocumentType,
             beneficiaryDocumentNumber,
-            aggregate.getEvaluationDate(),
-            aggregate.getSecurementDate(),
+            evaluationDate,
+            securementDate,
             aggregate.getScan().key().value(),
             aggregate.getScan().sizeInBytes(),
             aggregate.getSubmittedBy().value(),
-            aggregate.getSubmissionDate(),
+            aggregate.getSubmissionDate().value(),
             aggregate.getStatus().name(),
             reviewedBy,
-            aggregate.getReviewDate(),
+            reviewDate,
             supplies
         );
     }
@@ -103,6 +120,18 @@ public class JpaFieldSheetRepositoryAdapter
         boolean isReviewed = entity.getReviewedBy() != null;
         GeneralManagementAssistantId reviewedBy = isReviewed
             ? new GeneralManagementAssistantId(entity.getReviewedBy())
+            : null;
+        boolean hasReviewDate = entity.getReviewDate() != null;
+        ReviewDate reviewDate = hasReviewDate
+            ? new ReviewDate(entity.getReviewDate())
+            : null;
+        boolean isEvaluated = entity.getEvaluationDate() != null;
+        EvaluationDate evaluationDate = isEvaluated
+            ? new EvaluationDate(entity.getEvaluationDate())
+            : null;
+        boolean statesSecurement = entity.getSecurementDate() != null;
+        SecurementDate securementDate = statesSecurement
+            ? new SecurementDate(entity.getSecurementDate())
             : null;
         boolean namesABeneficiary = entity.getBeneficiaryDocumentType() != null;
         BeneficiaryLegalDocument beneficiary = namesABeneficiary
@@ -125,13 +154,13 @@ public class JpaFieldSheetRepositoryAdapter
             FieldSheetStatus.valueOf(entity.getStatus()),
             beneficiary,
             supplies,
-            entity.getEvaluationDate(),
-            entity.getSecurementDate(),
+            evaluationDate,
+            securementDate,
             new FieldSheetScan(new ScanKey(entity.getScanKey()), entity.getScanSize()),
             new FieldAgentId(entity.getSubmittedBy()),
-            entity.getSubmissionDate(),
+            new SubmissionDate(entity.getSubmissionDate()),
             reviewedBy,
-            entity.getReviewDate()
+            reviewDate
         );
     }
 

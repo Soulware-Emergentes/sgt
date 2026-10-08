@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lat.soulware.sgt.monitoring.application.commands.fieldsheets.intent.RejectFieldSheet;
 import lat.soulware.sgt.monitoring.domain.model.aggregates.FieldSheet;
+import lat.soulware.sgt.monitoring.domain.model.valueobjects.ReviewDate;
 import lat.soulware.sgt.monitoring.domain.repositories.FieldSheetRepository;
 import lat.soulware.sgt.shared.application.commands.handlers.CommandHandler;
 
@@ -23,7 +24,7 @@ public class RejectFieldSheetHandler implements CommandHandler {
 
     public void handle(RejectFieldSheet command) {
         FieldSheet fieldSheet = this.fieldSheetRepository.getById(command.fieldSheetId());
-        fieldSheet.reject(command.reviewer(), LocalDateTime.now());
+        fieldSheet.reject(command.reviewer(), new ReviewDate(LocalDateTime.now()));
         this.fieldSheetRepository.save(fieldSheet);
     }
 }

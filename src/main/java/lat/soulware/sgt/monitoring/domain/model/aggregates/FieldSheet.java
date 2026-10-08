@@ -1,7 +1,6 @@
 package lat.soulware.sgt.monitoring.domain.model.aggregates;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,9 +21,13 @@ import lat.soulware.sgt.monitoring.domain.model.exceptions.MissingSubmitterExcep
 import lat.soulware.sgt.monitoring.domain.model.exceptions.MissingTaskCodeException;
 import lat.soulware.sgt.monitoring.domain.model.exceptions.ReviewBeforeSubmissionException;
 import lat.soulware.sgt.monitoring.domain.model.exceptions.ReviewerIsSubmitterException;
+import lat.soulware.sgt.monitoring.domain.model.valueobjects.EvaluationDate;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.FieldSheetCode;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.FieldSheetScan;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.FieldSheetStatus;
+import lat.soulware.sgt.monitoring.domain.model.valueobjects.ReviewDate;
+import lat.soulware.sgt.monitoring.domain.model.valueobjects.SecurementDate;
+import lat.soulware.sgt.monitoring.domain.model.valueobjects.SubmissionDate;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.SubmissionYear;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.Supply;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.TaskCode;
@@ -61,15 +64,15 @@ public class FieldSheet extends AggregateRoot<FieldSheetId> {
 
     private BeneficiaryLegalDocument beneficiaryLegalDocument;
     private List<Supply> usedSupplies;
-    private LocalDateTime evaluationDate;
-    private LocalDateTime securementDate;
+    private EvaluationDate evaluationDate;
+    private SecurementDate securementDate;
 
     private final FieldSheetScan scan;
     private final FieldAgentId submittedBy;
-    private final LocalDateTime submissionDate;
+    private final SubmissionDate submissionDate;
 
     private GeneralManagementAssistantId reviewedBy;
-    private LocalDateTime reviewDate;
+    private ReviewDate reviewDate;
 
     private FieldSheet(
         FieldSheetId id,
@@ -78,13 +81,13 @@ public class FieldSheet extends AggregateRoot<FieldSheetId> {
         FieldSheetStatus status,
         BeneficiaryLegalDocument beneficiaryLegalDocument,
         List<Supply> usedSupplies,
-        LocalDateTime evaluationDate,
-        LocalDateTime securementDate,
+        EvaluationDate evaluationDate,
+        SecurementDate securementDate,
         FieldSheetScan scan,
         FieldAgentId submittedBy,
-        LocalDateTime submissionDate,
+        SubmissionDate submissionDate,
         GeneralManagementAssistantId reviewedBy,
-        LocalDateTime reviewDate
+        ReviewDate reviewDate
     ) {
         if (code == null) {
             throw new MissingFieldSheetCodeException();
@@ -136,14 +139,14 @@ public class FieldSheet extends AggregateRoot<FieldSheetId> {
         TaskCode taskCode,
         FieldSheetScan scan,
         FieldAgentId submittedBy,
-        LocalDateTime submissionDate,
+        SubmissionDate submissionDate,
         Optional<FieldSheet> lastOfYear
     ) {
         if (submissionDate == null) {
             throw new MissingSubmissionDateException();
         }
         FieldSheetCode code = lastOfYear.map(last -> last.getCode().next())
-            .orElse(FieldSheetCode.first(SubmissionYear.of(submissionDate)));
+            .orElse(FieldSheetCode.first(SubmissionYear.of(submissionDate.value())));
 
         FieldSheet fieldSheet = new FieldSheet(
             id,
@@ -188,13 +191,13 @@ public class FieldSheet extends AggregateRoot<FieldSheetId> {
         FieldSheetStatus status,
         BeneficiaryLegalDocument beneficiaryLegalDocument,
         List<Supply> usedSupplies,
-        LocalDateTime evaluationDate,
-        LocalDateTime securementDate,
+        EvaluationDate evaluationDate,
+        SecurementDate securementDate,
         FieldSheetScan scan,
         FieldAgentId submittedBy,
-        LocalDateTime submissionDate,
+        SubmissionDate submissionDate,
         GeneralManagementAssistantId reviewedBy,
-        LocalDateTime reviewDate
+        ReviewDate reviewDate
     ) {
         return new FieldSheet(
             id,
@@ -231,11 +234,11 @@ public class FieldSheet extends AggregateRoot<FieldSheetId> {
      */
     public void approve(
         GeneralManagementAssistantId reviewer,
-        LocalDateTime reviewDate,
+        ReviewDate reviewDate,
         BeneficiaryLegalDocument beneficiaryLegalDocument,
         List<Supply> usedSupplies,
-        LocalDateTime evaluationDate,
-        LocalDateTime securementDate
+        EvaluationDate evaluationDate,
+        SecurementDate securementDate
     ) {
         requireConfirmedData(beneficiaryLegalDocument, evaluationDate);
         this.review(reviewer, reviewDate, FieldSheetStatus.APPROVED);
@@ -257,7 +260,7 @@ public class FieldSheet extends AggregateRoot<FieldSheetId> {
      * @throws ReviewBeforeSubmissionException    if {@code reviewDate} precedes the submission
      * @throws ReviewerIsSubmitterException      if the reviewer is the field agent who submitted it
      */
-    public void reject(GeneralManagementAssistantId reviewer, LocalDateTime reviewDate) {
+    public void reject(GeneralManagementAssistantId reviewer, ReviewDate reviewDate) {
         this.review(reviewer, reviewDate, FieldSheetStatus.REJECTED);
         this.registerEvent(new FieldSheetRejected(this.id, Instant.now()));
     }
@@ -311,7 +314,7 @@ public class FieldSheet extends AggregateRoot<FieldSheetId> {
 
     private static void requireConfirmedData(
         BeneficiaryLegalDocument beneficiaryLegalDocument,
-        LocalDateTime evaluationDate
+        EvaluationDate evaluationDate
     ) {
         if (beneficiaryLegalDocument == null) {
             throw new MissingBeneficiaryException();
@@ -332,7 +335,7 @@ public class FieldSheet extends AggregateRoot<FieldSheetId> {
         }
     }
 
-    private void review(GeneralManagementAssistantId reviewer, LocalDateTime reviewDate, FieldSheetStatus outcome) {
+    private void review(GeneralManagementAssistantId reviewer, ReviewDate reviewDate, FieldSheetStatus outcome) {
         this.requireDelivered();
         if (reviewer == null) {
             throw new MissingReviewerException();
@@ -340,8 +343,8 @@ public class FieldSheet extends AggregateRoot<FieldSheetId> {
         if (reviewDate == null) {
             throw new MissingReviewDateException();
         }
-        if (reviewDate.isBefore(this.submissionDate)) {
-            throw new ReviewBeforeSubmissionException(reviewDate, this.submissionDate);
+        if (reviewDate.value().isBefore(this.submissionDate.value())) {
+            throw new ReviewBeforeSubmissionException(reviewDate.value(), this.submissionDate.value());
         }
         boolean reviewsOwnSubmission = reviewer.value().equals(this.submittedBy.value());
         if (reviewsOwnSubmission) {
@@ -376,12 +379,12 @@ public class FieldSheet extends AggregateRoot<FieldSheetId> {
     }
 
     /** @return when the evaluation took place, null until approved */
-    public LocalDateTime getEvaluationDate() {
+    public EvaluationDate getEvaluationDate() {
         return this.evaluationDate;
     }
 
     /** @return the securement date, null until approved or when the PDF states none */
-    public LocalDateTime getSecurementDate() {
+    public SecurementDate getSecurementDate() {
         return this.securementDate;
     }
 
@@ -393,7 +396,7 @@ public class FieldSheet extends AggregateRoot<FieldSheetId> {
         return this.submittedBy;
     }
 
-    public LocalDateTime getSubmissionDate() {
+    public SubmissionDate getSubmissionDate() {
         return this.submissionDate;
     }
 
@@ -407,7 +410,7 @@ public class FieldSheet extends AggregateRoot<FieldSheetId> {
     }
 
     /** @return when the field sheet was reviewed, null until it is reviewed */
-    public LocalDateTime getReviewDate() {
+    public ReviewDate getReviewDate() {
         return this.reviewDate;
     }
 }
