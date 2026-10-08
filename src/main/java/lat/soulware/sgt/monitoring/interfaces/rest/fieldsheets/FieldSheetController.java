@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.Operation;
+
 import lat.soulware.sgt.monitoring.application.commands.fieldsheets.FieldSheetCommandService;
 import lat.soulware.sgt.monitoring.application.queries.fieldsheets.FieldSheetQueryService;
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.mappers.FieldSheetWireMapper;
@@ -50,6 +52,7 @@ public class FieldSheetController {
         this.fieldSheetQueryService = fieldSheetQueryService;
     }
 
+    @Operation(summary = "Returns a signed link to upload a field sheet scan to")
     @PostMapping("/field-sheets/scan-uploads")
     public ScanLinkResponse scanUpload() {
         return FieldSheetWireMapper.toScanLinkResponse(
@@ -57,6 +60,7 @@ public class FieldSheetController {
         );
     }
 
+    @Operation(summary = "Submits a field sheet for a task and returns it")
     @PostMapping("/field-sheets")
     @ResponseStatus(HttpStatus.CREATED)
     public FieldSheetResponse submit(@RequestBody SubmitFieldSheetRequest request, Caller caller) {
@@ -71,6 +75,7 @@ public class FieldSheetController {
      * One page of field sheets for a table: every filter optional, newest submission first unless
      * sorted otherwise.
      */
+    @Operation(summary = "Returns a paginated set of field sheets")
     @GetMapping("/field-sheets")
     public FieldSheetsPageResponse page(
         @RequestParam(required = false) String status,
@@ -98,6 +103,7 @@ public class FieldSheetController {
         ));
     }
 
+    @Operation(summary = "Returns a field sheet by its id")
     @GetMapping("/field-sheets/{fieldSheetId}")
     public FieldSheetResponse fieldSheet(@PathVariable UUID fieldSheetId) {
         return FieldSheetWireMapper.toFieldSheetResponse(
@@ -105,6 +111,7 @@ public class FieldSheetController {
         );
     }
 
+    @Operation(summary = "Returns a signed link to download the scan of a field sheet")
     @GetMapping("/field-sheets/{fieldSheetId}/scan")
     public ScanLinkResponse scan(@PathVariable UUID fieldSheetId) {
         return FieldSheetWireMapper.toScanLinkResponse(
@@ -112,6 +119,7 @@ public class FieldSheetController {
         );
     }
 
+    @Operation(summary = "Approves a delivered field sheet and returns it")
     @PostMapping("/field-sheets/{fieldSheetId}/approval")
     public FieldSheetResponse approve(
         @PathVariable UUID fieldSheetId,
@@ -123,6 +131,7 @@ public class FieldSheetController {
         return this.fieldSheet(fieldSheetId);
     }
 
+    @Operation(summary = "Rejects a delivered field sheet and returns it")
     @PostMapping("/field-sheets/{fieldSheetId}/rejection")
     public FieldSheetResponse reject(@PathVariable UUID fieldSheetId, Caller caller) {
         this.fieldSheetCommandService.reject(FieldSheetWireMapper.toRejectFieldSheet(fieldSheetId, caller));
@@ -130,6 +139,7 @@ public class FieldSheetController {
         return this.fieldSheet(fieldSheetId);
     }
 
+    @Operation(summary = "Relinks a field sheet to another task and returns it")
     @PostMapping("/field-sheets/{fieldSheetId}/relink")
     public FieldSheetResponse relink(
         @PathVariable UUID fieldSheetId,

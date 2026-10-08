@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.Operation;
+
 import lat.soulware.sgt.plots.application.commands.plot.PlotCommandService;
 import lat.soulware.sgt.plots.application.queries.plots.PlotQueryService;
 import lat.soulware.sgt.plots.domain.model.valueobjects.PlotId;
@@ -40,6 +42,7 @@ public class PlotController {
         this.plotQueryService = plotQueryService;
     }
 
+    @Operation(summary = "Registers a plot to a beneficiary and returns it")
     @PostMapping("/plots")
     @ResponseStatus(HttpStatus.CREATED)
     public PlotResponse register(@RequestBody RegisterPlotRequest request, Caller caller) {
@@ -48,6 +51,7 @@ public class PlotController {
         return this.plot(registered.value(), caller);
     }
 
+    @Operation(summary = "Returns the plots within an administrative region")
     @GetMapping("/plots")
     public PlotsResponse inRegion(@RequestParam String region, Caller caller) {
         return PlotWireMapper.toPlotsResponse(
@@ -55,6 +59,7 @@ public class PlotController {
         );
     }
 
+    @Operation(summary = "Returns the plot of a given owner")
     @GetMapping("/plots/owner")
     public PlotResponse ofOwner(
         @RequestParam String documentType,
@@ -66,6 +71,7 @@ public class PlotController {
         );
     }
 
+    @Operation(summary = "Returns a plot by its id")
     @GetMapping("/plots/{plotId}")
     public PlotResponse plot(@PathVariable UUID plotId, Caller caller) {
         return PlotWireMapper.toPlotResponse(

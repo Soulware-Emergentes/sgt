@@ -28,6 +28,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
  * token is missing, which surfaces when the anonymous request is refused, or present and rejected by
  * the bearer filter. Stateless, so there is no session to forge a request against and no CSRF token
  * either.
+ *
+ * <p>The OpenAPI document and the Swagger UI are the one exception, answered without a token, and
+ * only served at all where {@code API_DOCS_ENABLED} is on.
  */
 @Configuration
 public class TokenSecurityConfiguration {
@@ -41,6 +44,7 @@ public class TokenSecurityConfiguration {
             .cors(Customizer.withDefaults())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(requests -> requests
+                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .anyRequest().authenticated()
             )
             .oauth2ResourceServer(resourceServer -> resourceServer.jwt(Customizer.withDefaults())
