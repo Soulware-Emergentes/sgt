@@ -9,15 +9,11 @@ import lat.soulware.sgt.monitoring.application.commands.fieldsheets.intent.Relin
 import lat.soulware.sgt.monitoring.application.commands.fieldsheets.intent.SubmitFieldSheet;
 import lat.soulware.sgt.monitoring.application.queries.fieldsheets.criteria.FieldSheetById;
 import lat.soulware.sgt.monitoring.application.queries.fieldsheets.criteria.FieldSheetsInStatus;
-import lat.soulware.sgt.monitoring.application.queries.fieldsheets.criteria.PendingTasks;
 import lat.soulware.sgt.monitoring.application.queries.fieldsheets.criteria.ScanOfFieldSheet;
 import lat.soulware.sgt.monitoring.application.queries.fieldsheets.criteria.ScanUploadSlot;
-import lat.soulware.sgt.monitoring.application.queries.fieldsheets.criteria.TaskByCode;
 import lat.soulware.sgt.monitoring.application.queries.fieldsheets.results.FieldSheetResult;
 import lat.soulware.sgt.monitoring.application.queries.fieldsheets.results.FieldSheetsResult;
-import lat.soulware.sgt.monitoring.application.queries.fieldsheets.results.PendingTasksResult;
 import lat.soulware.sgt.monitoring.application.queries.fieldsheets.results.ScanLinkResult;
-import lat.soulware.sgt.monitoring.application.queries.fieldsheets.results.TaskResult;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.EvaluationDate;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.MeasurementUnit;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.Quantity;
@@ -35,11 +31,8 @@ import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.FieldSh
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.FieldSheetResponse;
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.FieldSheetSummaryResponse;
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.FieldSheetsResponse;
-import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.PendingTaskResponse;
-import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.PendingTasksResponse;
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.ScanLinkResponse;
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.SupplyResponse;
-import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.TaskResponse;
 import lat.soulware.sgt.monitoring.publishedlanguage.FieldSheetId;
 import lat.soulware.sgt.people.publishedlanguage.BeneficiaryLegalDocument;
 import lat.soulware.sgt.people.publishedlanguage.FieldAgentId;
@@ -107,14 +100,6 @@ public final class FieldSheetWireMapper implements WireMapper {
         return new ScanUploadSlot();
     }
 
-    public static TaskByCode toTaskByCode(String taskCode) {
-        return new TaskByCode(taskCode);
-    }
-
-    public static PendingTasks toPendingTasks(String activityCode) {
-        return new PendingTasks(activityCode);
-    }
-
     public static FieldSheetCreatedResponse toCreatedResponse(FieldSheetId fieldSheetId) {
         return new FieldSheetCreatedResponse(fieldSheetId.value());
     }
@@ -155,22 +140,6 @@ public final class FieldSheetWireMapper implements WireMapper {
 
     public static ScanLinkResponse toScanLinkResponse(ScanLinkResult result) {
         return new ScanLinkResponse(result.key(), result.url(), result.expiresAt());
-    }
-
-    public static TaskResponse toTaskResponse(TaskResult result) {
-        return new TaskResponse(result.code(), result.description(), result.status(), result.beneficiaryId());
-    }
-
-    public static PendingTasksResponse toPendingTasksResponse(PendingTasksResult result) {
-        return new PendingTasksResponse(result.tasks().stream()
-            .map(task -> new PendingTaskResponse(
-                task.code(),
-                task.description(),
-                task.activityCode(),
-                task.activityDescription()
-            ))
-            .toList()
-        );
     }
 
     private static Supply toSupply(SupplyRequest request) {

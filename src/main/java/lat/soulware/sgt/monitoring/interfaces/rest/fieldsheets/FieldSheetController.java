@@ -22,15 +22,12 @@ import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.requests.SubmitFi
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.FieldSheetCreatedResponse;
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.FieldSheetResponse;
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.FieldSheetsResponse;
-import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.PendingTasksResponse;
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.ScanLinkResponse;
-import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.TaskResponse;
 
 /**
  * Field sheets, from the field agent's upload to the assistant's review. The scanned PDF goes
  * straight to the object store through a signed link; the field sheet is then submitted with the
- * key it was uploaded under. Field agents pick the task from poi's pending list, and reviewers read
- * the task's beneficiary to check the PDF against it.
+ * key it was uploaded under.
  */
 @RestController
 @RequestMapping("/api/v1")
@@ -45,20 +42,6 @@ public class FieldSheetController {
     ) {
         this.fieldSheetCommandService = fieldSheetCommandService;
         this.fieldSheetQueryService = fieldSheetQueryService;
-    }
-
-    @GetMapping("/tasks/pending")
-    public PendingTasksResponse pendingTasks(@RequestParam(required = false) String activityCode) {
-        return FieldSheetWireMapper.toPendingTasksResponse(
-            this.fieldSheetQueryService.pendingTasks(FieldSheetWireMapper.toPendingTasks(activityCode))
-        );
-    }
-
-    @GetMapping("/tasks/{taskCode}")
-    public TaskResponse task(@PathVariable String taskCode) {
-        return FieldSheetWireMapper.toTaskResponse(
-            this.fieldSheetQueryService.task(FieldSheetWireMapper.toTaskByCode(taskCode))
-        );
     }
 
     @PostMapping("/field-sheets/scan-uploads")
