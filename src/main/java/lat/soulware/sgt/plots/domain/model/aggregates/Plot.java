@@ -1,7 +1,6 @@
 package lat.soulware.sgt.plots.domain.model.aggregates;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -17,6 +16,7 @@ import lat.soulware.sgt.plots.domain.model.exceptions.OverlappingPlotException;
 import lat.soulware.sgt.plots.domain.model.valueobjects.OverlapTolerance;
 import lat.soulware.sgt.plots.domain.model.valueobjects.PlotBoundary;
 import lat.soulware.sgt.plots.domain.model.valueobjects.PlotId;
+import lat.soulware.sgt.plots.domain.model.valueobjects.RegistrationDate;
 import lat.soulware.sgt.plots.domain.model.valueobjects.SharedArea;
 import lat.soulware.sgt.plots.domain.model.valueobjects.Ubigeo;
 import lat.soulware.sgt.plots.domain.services.PlotGeometry;
@@ -41,14 +41,14 @@ public class Plot extends AggregateRoot<PlotId> {
     private final BeneficiaryLegalDocument owner;
     private final PlotBoundary boundary;
     private final Ubigeo ubigeo;
-    private final LocalDateTime registrationDate;
+    private final RegistrationDate registrationDate;
 
     private Plot(
         PlotId id,
         BeneficiaryLegalDocument owner,
         PlotBoundary boundary,
         Ubigeo ubigeo,
-        LocalDateTime registrationDate
+        RegistrationDate registrationDate
     ) {
         if (owner == null) {
             throw new MissingPlotOwnerException();
@@ -92,7 +92,7 @@ public class Plot extends AggregateRoot<PlotId> {
         BeneficiaryLegalDocument owner,
         PlotBoundary boundary,
         Ubigeo ubigeo,
-        LocalDateTime registrationDate,
+        RegistrationDate registrationDate,
         Optional<Plot> ownersPlot,
         List<Plot> neighbours,
         PlotGeometry geometry
@@ -133,7 +133,7 @@ public class Plot extends AggregateRoot<PlotId> {
         BeneficiaryLegalDocument owner,
         PlotBoundary boundary,
         Ubigeo ubigeo,
-        LocalDateTime registrationDate
+        RegistrationDate registrationDate
     ) {
         return new Plot(id, owner, boundary, ubigeo, registrationDate);
     }
@@ -155,7 +155,7 @@ public class Plot extends AggregateRoot<PlotId> {
         return this.ubigeo;
     }
 
-    public LocalDateTime getRegistrationDate() {
+    public RegistrationDate getRegistrationDate() {
         return this.registrationDate;
     }
 }

@@ -34,6 +34,7 @@ import lat.soulware.sgt.plots.domain.model.exceptions.BeneficiaryAlreadyHoldsPlo
 import lat.soulware.sgt.plots.domain.model.exceptions.OverlappingPlotException;
 import lat.soulware.sgt.plots.domain.model.valueobjects.PlotBoundary;
 import lat.soulware.sgt.plots.domain.model.valueobjects.PlotId;
+import lat.soulware.sgt.plots.domain.model.valueobjects.RegistrationDate;
 import lat.soulware.sgt.plots.domain.model.valueobjects.SurveyPoint;
 import lat.soulware.sgt.plots.domain.model.valueobjects.Ubigeo;
 import lat.soulware.sgt.plots.domain.model.valueobjects.UtmZone;
@@ -53,7 +54,7 @@ import lat.soulware.sgt.support.PostgresIntegrationTest;
 @SpringBootTest
 class PlotRegistrationIT extends PostgresIntegrationTest {
 
-    private static final LocalDateTime REGISTERED = LocalDateTime.of(2026, 10, 1, 9, 0);
+    private static final RegistrationDate REGISTERED = new RegistrationDate(LocalDateTime.of(2026, 10, 1, 9, 0));
     private static final Ubigeo DISTRICT = new Ubigeo("150101");
     private static final AtomicInteger NEXT_DOCUMENT_NUMBER = new AtomicInteger(10_000_000);
 

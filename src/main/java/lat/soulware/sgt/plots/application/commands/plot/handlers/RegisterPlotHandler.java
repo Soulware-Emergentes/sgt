@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import lat.soulware.sgt.plots.application.commands.plot.intent.RegisterPlot;
 import lat.soulware.sgt.plots.domain.model.aggregates.Plot;
 import lat.soulware.sgt.plots.domain.model.valueobjects.PlotId;
+import lat.soulware.sgt.plots.domain.model.valueobjects.RegistrationDate;
 import lat.soulware.sgt.plots.domain.repositories.PlotRepository;
 import lat.soulware.sgt.plots.domain.services.PlotGeometry;
 import lat.soulware.sgt.shared.application.commands.handlers.CommandHandler;
@@ -47,7 +48,7 @@ public class RegisterPlotHandler implements CommandHandler {
             command.owner(),
             command.boundary(),
             command.ubigeo(),
-            LocalDateTime.now(),
+            new RegistrationDate(LocalDateTime.now()),
             ownersPlot,
             neighbours,
             this.plotGeometry

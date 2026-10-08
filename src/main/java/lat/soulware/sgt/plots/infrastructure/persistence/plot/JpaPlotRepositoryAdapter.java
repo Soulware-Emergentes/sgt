@@ -15,6 +15,7 @@ import lat.soulware.sgt.plots.domain.model.aggregates.Plot;
 import lat.soulware.sgt.plots.domain.model.exceptions.PlotNotFoundException;
 import lat.soulware.sgt.plots.domain.model.valueobjects.PlotBoundary;
 import lat.soulware.sgt.plots.domain.model.valueobjects.PlotId;
+import lat.soulware.sgt.plots.domain.model.valueobjects.RegistrationDate;
 import lat.soulware.sgt.plots.domain.model.valueobjects.Ubigeo;
 import lat.soulware.sgt.plots.domain.repositories.PlotRepository;
 import lat.soulware.sgt.plots.infrastructure.persistence.plot.jpa.PlotEntity;
@@ -70,7 +71,7 @@ public class JpaPlotRepositoryAdapter extends JpaRepositoryToDomainRepositoryAda
             owner.number(),
             PlotGeometries.toPolygon(aggregate.getBoundary()),
             aggregate.getUbigeo().value(),
-            aggregate.getRegistrationDate()
+            aggregate.getRegistrationDate().value()
         );
     }
 
@@ -86,7 +87,7 @@ public class JpaPlotRepositoryAdapter extends JpaRepositoryToDomainRepositoryAda
             owner,
             PlotGeometries.toBoundary(entity.getBoundary()),
             new Ubigeo(entity.getUbigeo()),
-            entity.getRegistrationDate()
+            new RegistrationDate(entity.getRegistrationDate())
         );
     }
 

@@ -22,6 +22,7 @@ import lat.soulware.sgt.plots.domain.model.exceptions.MissingPlotUbigeoException
 import lat.soulware.sgt.plots.domain.model.exceptions.OverlappingPlotException;
 import lat.soulware.sgt.plots.domain.model.valueobjects.PlotBoundary;
 import lat.soulware.sgt.plots.domain.model.valueobjects.PlotId;
+import lat.soulware.sgt.plots.domain.model.valueobjects.RegistrationDate;
 import lat.soulware.sgt.plots.domain.model.valueobjects.SharedArea;
 import lat.soulware.sgt.plots.domain.model.valueobjects.SurveyPoint;
 import lat.soulware.sgt.plots.domain.model.valueobjects.Ubigeo;
@@ -37,7 +38,7 @@ import lat.soulware.sgt.plots.domain.services.PlotGeometry;
 class PlotTest {
 
     private static final PlotBoundary CANDIDATE = square(0);
-    private static final LocalDateTime REGISTERED = LocalDateTime.of(2026, 10, 1, 9, 0);
+    private static final RegistrationDate REGISTERED = new RegistrationDate(LocalDateTime.of(2026, 10, 1, 9, 0));
     private static final Ubigeo DISTRICT = new Ubigeo("150101");
     private static final BeneficiaryLegalDocument OWNER = new BeneficiaryLegalDocument(LegalDocumentType.DNI, "12345678");
 

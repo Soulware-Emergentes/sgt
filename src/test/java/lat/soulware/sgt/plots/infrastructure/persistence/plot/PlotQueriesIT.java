@@ -27,6 +27,7 @@ import lat.soulware.sgt.plots.domain.model.exceptions.BeneficiaryHoldsNoPlotExce
 import lat.soulware.sgt.plots.domain.model.exceptions.InvalidRegionException;
 import lat.soulware.sgt.plots.domain.model.valueobjects.PlotBoundary;
 import lat.soulware.sgt.plots.domain.model.valueobjects.PlotId;
+import lat.soulware.sgt.plots.domain.model.valueobjects.RegistrationDate;
 import lat.soulware.sgt.plots.domain.model.valueobjects.SurveyPoint;
 import lat.soulware.sgt.plots.domain.model.valueobjects.Ubigeo;
 import lat.soulware.sgt.plots.domain.model.valueobjects.UtmZone;
@@ -44,7 +45,7 @@ import lat.soulware.sgt.support.PostgresIntegrationTest;
 @Transactional
 class PlotQueriesIT extends PostgresIntegrationTest {
 
-    private static final LocalDateTime REGISTERED = LocalDateTime.of(2026, 10, 1, 9, 0);
+    private static final RegistrationDate REGISTERED = new RegistrationDate(LocalDateTime.of(2026, 10, 1, 9, 0));
     private static final BeneficiaryLegalDocument IN_WANCHAQ = owner("30000001");
     private static final BeneficiaryLegalDocument IN_CUSCO = owner("30000002");
     private static final BeneficiaryLegalDocument IN_ACOMAYO = owner("30000003");
@@ -95,7 +96,7 @@ class PlotQueriesIT extends PostgresIntegrationTest {
 
         assertThat(plot.ubigeo()).isEqualTo("040101");
         assertThat(plot.utmZone()).isEqualTo("ZONE_18S");
-        assertThat(plot.registrationDate()).isEqualTo(REGISTERED);
+        assertThat(plot.registrationDate()).isEqualTo(REGISTERED.value());
         assertThat(plot.boundary()).containsExactly(
             new VertexResult(291_500, 8_500_000),
             new VertexResult(291_600, 8_500_000),
