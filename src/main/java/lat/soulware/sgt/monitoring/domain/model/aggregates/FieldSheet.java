@@ -3,14 +3,17 @@ package lat.soulware.sgt.monitoring.domain.model.aggregates;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import lat.soulware.sgt.monitoring.domain.model.events.FieldSheetRejected;
 import lat.soulware.sgt.monitoring.domain.model.events.FieldSheetSubmitted;
 import lat.soulware.sgt.monitoring.domain.model.exceptions.FieldSheetAlreadyReviewedException;
 import lat.soulware.sgt.monitoring.domain.model.exceptions.FieldSheetNotDeliveredException;
 import lat.soulware.sgt.monitoring.domain.model.exceptions.FieldSheetNotSubmittedException;
+import lat.soulware.sgt.monitoring.domain.model.exceptions.FieldSheetNumbersExhaustedException;
 import lat.soulware.sgt.monitoring.domain.model.exceptions.MissingBeneficiaryException;
 import lat.soulware.sgt.monitoring.domain.model.exceptions.MissingEvaluationDateException;
+import lat.soulware.sgt.monitoring.domain.model.exceptions.MissingFieldSheetCodeException;
 import lat.soulware.sgt.monitoring.domain.model.exceptions.MissingReviewDateException;
 import lat.soulware.sgt.monitoring.domain.model.exceptions.MissingReviewerException;
 import lat.soulware.sgt.monitoring.domain.model.exceptions.MissingScanException;
@@ -19,8 +22,10 @@ import lat.soulware.sgt.monitoring.domain.model.exceptions.MissingSubmitterExcep
 import lat.soulware.sgt.monitoring.domain.model.exceptions.MissingTaskCodeException;
 import lat.soulware.sgt.monitoring.domain.model.exceptions.ReviewBeforeSubmissionException;
 import lat.soulware.sgt.monitoring.domain.model.exceptions.ReviewerIsSubmitterException;
+import lat.soulware.sgt.monitoring.domain.model.valueobjects.FieldSheetCode;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.FieldSheetScan;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.FieldSheetStatus;
+import lat.soulware.sgt.monitoring.domain.model.valueobjects.SubmissionYear;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.Supply;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.TaskCode;
 import lat.soulware.sgt.monitoring.publishedlanguage.FieldSheetApproved;
@@ -50,6 +55,7 @@ import lat.soulware.sgt.shared.domain.model.aggregates.PackagedAs;
 @PackagedAs("fieldsheets")
 public class FieldSheet extends AggregateRoot<FieldSheetId> {
     private final FieldSheetId id;
+    private final FieldSheetCode code;
     private TaskCode taskCode;
     private FieldSheetStatus status;
 
@@ -67,6 +73,7 @@ public class FieldSheet extends AggregateRoot<FieldSheetId> {
 
     private FieldSheet(
         FieldSheetId id,
+        FieldSheetCode code,
         TaskCode taskCode,
         FieldSheetStatus status,
         BeneficiaryLegalDocument beneficiaryLegalDocument,
@@ -79,6 +86,9 @@ public class FieldSheet extends AggregateRoot<FieldSheetId> {
         GeneralManagementAssistantId reviewedBy,
         LocalDateTime reviewDate
     ) {
+        if (code == null) {
+            throw new MissingFieldSheetCodeException();
+        }
         if (taskCode == null) {
             throw new MissingTaskCodeException();
         }
@@ -95,6 +105,7 @@ public class FieldSheet extends AggregateRoot<FieldSheetId> {
             throw new MissingSubmissionDateException();
         }
         this.id = id;
+        this.code = code;
         this.taskCode = taskCode;
         this.status = status;
         this.beneficiaryLegalDocument = beneficiaryLegalDocument;
@@ -114,18 +125,29 @@ public class FieldSheet extends AggregateRoot<FieldSheetId> {
      * @param scan           the scanned PDF, already uploaded
      * @param submittedBy    the field agent submitting the field sheet
      * @param submissionDate when the field agent submitted the field sheet
-     * @return the submitted field sheet, awaiting review, having announced its submission so its
-     *         delivery reaches poi
+     * @param lastOfYear     the field sheet numbered last in the submission's year, empty when this
+     *                       is the year's first
+     * @return the submitted field sheet, awaiting review, numbered right after the year's last and
+     *         having announced its submission so its delivery reaches poi
+     * @throws FieldSheetNumbersExhaustedException if the year already numbered its 9999th
      */
     public static FieldSheet submit(
         FieldSheetId id,
         TaskCode taskCode,
         FieldSheetScan scan,
         FieldAgentId submittedBy,
-        LocalDateTime submissionDate
+        LocalDateTime submissionDate,
+        Optional<FieldSheet> lastOfYear
     ) {
+        if (submissionDate == null) {
+            throw new MissingSubmissionDateException();
+        }
+        FieldSheetCode code = lastOfYear.map(last -> last.getCode().next())
+            .orElse(FieldSheetCode.first(SubmissionYear.of(submissionDate)));
+
         FieldSheet fieldSheet = new FieldSheet(
             id,
+            code,
             taskCode,
             FieldSheetStatus.SUBMITTED,
             null,
@@ -161,6 +183,7 @@ public class FieldSheet extends AggregateRoot<FieldSheetId> {
      */
     public static FieldSheet reconstitute(
         FieldSheetId id,
+        FieldSheetCode code,
         TaskCode taskCode,
         FieldSheetStatus status,
         BeneficiaryLegalDocument beneficiaryLegalDocument,
@@ -175,6 +198,7 @@ public class FieldSheet extends AggregateRoot<FieldSheetId> {
     ) {
         return new FieldSheet(
             id,
+            code,
             taskCode,
             status,
             beneficiaryLegalDocument,
@@ -331,6 +355,10 @@ public class FieldSheet extends AggregateRoot<FieldSheetId> {
     @Override
     public FieldSheetId getId() {
         return this.id;
+    }
+
+    public FieldSheetCode getCode() {
+        return this.code;
     }
 
     public TaskCode getTaskCode() {

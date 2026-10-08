@@ -1,5 +1,7 @@
 -- Field sheets.
 --
+-- A field sheet is known by its code, FI-NNNN-YYYY: its number among the
+-- field sheets submitted in year YYYY, restarting at 0001 every year.
 -- A field sheet names the poi task it is submitted for by the code poi gives
 -- it, and its status records poi's answer to the delivery. It is submitted as
 -- a scanned PDF held in the object store under scan_key. What the PDF says
@@ -8,6 +10,7 @@
 -- go with it.
 CREATE TABLE field_sheets (
     id UUID PRIMARY KEY,
+    code VARCHAR(12) NOT NULL UNIQUE CHECK (code ~ '^FI-[0-9]{4}-[0-9]{4}$'),
     task_code VARCHAR(20) NOT NULL,
     beneficiary_document_type VARCHAR(20),
     beneficiary_document_number VARCHAR(12),

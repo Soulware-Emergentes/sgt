@@ -10,6 +10,7 @@ import lat.soulware.sgt.shared.application.queries.results.QueryResult;
  * One field sheet, with what its review confirmed so far.
  *
  * @param id                        the field sheet's identity
+ * @param code                      the field sheet's code, such as FI-0032-2026
  * @param taskCode                  the poi task it is linked to
  * @param status                    where it stands, by name
  * @param beneficiaryDocumentType   the evaluated beneficiary's document type, null until approved
@@ -24,6 +25,7 @@ import lat.soulware.sgt.shared.application.queries.results.QueryResult;
  */
 public record FieldSheetResult(
     UUID id,
+    String code,
     String taskCode,
     String status,
     String beneficiaryDocumentType,

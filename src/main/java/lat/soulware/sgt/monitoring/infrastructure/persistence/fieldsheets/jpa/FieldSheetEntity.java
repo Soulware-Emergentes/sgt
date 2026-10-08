@@ -23,6 +23,9 @@ public class FieldSheetEntity {
     @Id
     private UUID id;
 
+    @Column(nullable = false, unique = true)
+    private String code;
+
     @Column(name = "task_code", nullable = false)
     private String taskCode;
 
@@ -70,6 +73,7 @@ public class FieldSheetEntity {
 
     public FieldSheetEntity(
         UUID id,
+        String code,
         String taskCode,
         String beneficiaryDocumentType,
         String beneficiaryDocumentNumber,
@@ -85,6 +89,7 @@ public class FieldSheetEntity {
         List<SupplyRow> supplies
     ) {
         this.id = id;
+        this.code = code;
         this.taskCode = taskCode;
         this.beneficiaryDocumentType = beneficiaryDocumentType;
         this.beneficiaryDocumentNumber = beneficiaryDocumentNumber;
@@ -102,6 +107,10 @@ public class FieldSheetEntity {
 
     public UUID getId() {
         return this.id;
+    }
+
+    public String getCode() {
+        return this.code;
     }
 
     public String getTaskCode() {

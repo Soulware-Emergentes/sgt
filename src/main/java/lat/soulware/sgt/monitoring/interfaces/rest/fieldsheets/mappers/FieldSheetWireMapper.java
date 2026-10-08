@@ -114,6 +114,7 @@ public final class FieldSheetWireMapper implements WireMapper {
         return new FieldSheetsResponse(result.fieldSheets().stream()
             .map(fieldSheet -> new FieldSheetSummaryResponse(
                 fieldSheet.id(),
+                fieldSheet.code(),
                 fieldSheet.taskCode(),
                 fieldSheet.status(),
                 fieldSheet.submittedBy(),
@@ -130,6 +131,7 @@ public final class FieldSheetWireMapper implements WireMapper {
 
         return new FieldSheetResponse(
             result.id(),
+            result.code(),
             result.taskCode(),
             result.status(),
             result.beneficiaryDocumentType(),

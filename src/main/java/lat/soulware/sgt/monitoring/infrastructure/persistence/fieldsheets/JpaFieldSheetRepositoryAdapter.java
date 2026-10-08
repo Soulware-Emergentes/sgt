@@ -2,6 +2,8 @@ package lat.soulware.sgt.monitoring.infrastructure.persistence.fieldsheets;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.context.ApplicationEventPublisher;
@@ -9,11 +11,13 @@ import org.springframework.stereotype.Repository;
 
 import lat.soulware.sgt.monitoring.domain.model.aggregates.FieldSheet;
 import lat.soulware.sgt.monitoring.domain.model.exceptions.FieldSheetNotFoundException;
+import lat.soulware.sgt.monitoring.domain.model.valueobjects.FieldSheetCode;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.FieldSheetScan;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.FieldSheetStatus;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.MeasurementUnit;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.Quantity;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.ScanKey;
+import lat.soulware.sgt.monitoring.domain.model.valueobjects.SubmissionYear;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.Supply;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.SupplyName;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.TaskCode;
@@ -60,7 +64,7 @@ public class JpaFieldSheetRepositoryAdapter
             ? aggregate.getReviewedBy().value()
             : null;
         BeneficiaryLegalDocument beneficiary = aggregate.getBeneficiaryLegalDocument();
-        boolean namesABeneficiary = beneficiary != null;
+        boolean namesABeneficiary = Objects.nonNull(beneficiary);
         String beneficiaryDocumentType = namesABeneficiary
             ? beneficiary.type().name()
             : null;
@@ -77,6 +81,7 @@ public class JpaFieldSheetRepositoryAdapter
 
         return new FieldSheetEntity(
             aggregate.getId().value(),
+            aggregate.getCode().value(),
             aggregate.getTaskCode().value(),
             beneficiaryDocumentType,
             beneficiaryDocumentNumber,
@@ -115,6 +120,7 @@ public class JpaFieldSheetRepositoryAdapter
 
         return FieldSheet.reconstitute(
             new FieldSheetId(entity.getId()),
+            FieldSheetCode.parse(entity.getCode()),
             new TaskCode(entity.getTaskCode()),
             FieldSheetStatus.valueOf(entity.getStatus()),
             beneficiary,
@@ -127,6 +133,14 @@ public class JpaFieldSheetRepositoryAdapter
             reviewedBy,
             entity.getReviewDate()
         );
+    }
+
+    @Override
+    public Optional<FieldSheet> findLastSubmittedIn(SubmissionYear year) {
+        String yearSuffix = "-%d".formatted(year.value());
+
+        return this.delegate.findFirstByCodeEndingWithOrderByCodeDesc(yearSuffix)
+            .map(this::toAggregate);
     }
 
     @Override

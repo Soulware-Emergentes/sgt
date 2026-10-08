@@ -24,13 +24,13 @@ import lat.soulware.sgt.monitoring.application.queries.fieldsheets.results.Suppl
 public class JdbcFieldSheetProjection implements FieldSheetProjection {
 
     private static final String FIND_IN_STATUS = """
-        SELECT id, task_code, status, submitted_by, submission_date
+        SELECT id, code, task_code, status, submitted_by, submission_date
         FROM field_sheets
         WHERE status = :status
         ORDER BY submission_date""";
 
     private static final String FIND_BY_ID = """
-        SELECT id, task_code, status, beneficiary_document_type, beneficiary_document_number,
+        SELECT id, code, task_code, status, beneficiary_document_type, beneficiary_document_number,
             evaluation_date, securement_date, submitted_by, submission_date, reviewed_by, review_date
         FROM field_sheets
         WHERE id = :id""";
@@ -58,6 +58,7 @@ public class JdbcFieldSheetProjection implements FieldSheetProjection {
 
         return this.jdbc.query(FIND_IN_STATUS, parameters, (row, rowNumber) -> new FieldSheetSummaryResult(
             row.getObject("id", UUID.class),
+            row.getString("code"),
             row.getString("task_code"),
             row.getString("status"),
             row.getObject("submitted_by", UUID.class),
@@ -91,6 +92,7 @@ public class JdbcFieldSheetProjection implements FieldSheetProjection {
     private FieldSheetResult toResult(ResultSet row, List<SupplyResult> supplies) throws SQLException {
         return new FieldSheetResult(
             row.getObject("id", UUID.class),
+            row.getString("code"),
             row.getString("task_code"),
             row.getString("status"),
             row.getString("beneficiary_document_type"),
