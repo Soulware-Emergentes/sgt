@@ -23,11 +23,9 @@ import lat.soulware.sgt.monitoring.domain.model.valueobjects.Supply;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.SupplyName;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.TaskCode;
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.requests.ApproveFieldSheetRequest;
-import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.requests.RejectFieldSheetRequest;
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.requests.RelinkFieldSheetRequest;
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.requests.SubmitFieldSheetRequest;
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.requests.SupplyRequest;
-import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.FieldSheetCreatedResponse;
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.FieldSheetResponse;
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.FieldSheetSummaryResponse;
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.FieldSheetsResponse;
@@ -39,6 +37,8 @@ import lat.soulware.sgt.people.publishedlanguage.FieldAgentId;
 import lat.soulware.sgt.people.publishedlanguage.GeneralManagementAssistantId;
 import lat.soulware.sgt.people.publishedlanguage.LegalDocumentType;
 import lat.soulware.sgt.shared.interfaces.rest.mappers.WireMapper;
+import lat.soulware.sgt.shared.interfaces.rest.security.Caller;
+import lat.soulware.sgt.shared.interfaces.rest.security.Role;
 
 /** Converts what {@code FieldSheetController} receives and answers. */
 public final class FieldSheetWireMapper implements WireMapper {
@@ -46,15 +46,22 @@ public final class FieldSheetWireMapper implements WireMapper {
     private FieldSheetWireMapper() {
     }
 
-    public static SubmitFieldSheet toSubmitFieldSheet(SubmitFieldSheetRequest request) {
+    public static SubmitFieldSheet toSubmitFieldSheet(SubmitFieldSheetRequest request, Caller caller) {
         return new SubmitFieldSheet(
             new TaskCode(request.taskCode()),
             new ScanKey(request.scanKey()),
-            new FieldAgentId(request.submittedBy())
+            new FieldAgentId(caller.actingAs(Role.FIELD_AGENT))
         );
     }
 
-    public static ApproveFieldSheet toApproveFieldSheet(UUID fieldSheetId, ApproveFieldSheetRequest request) {
+    public static ApproveFieldSheet toApproveFieldSheet(
+        UUID fieldSheetId,
+        ApproveFieldSheetRequest request,
+        Caller caller
+    ) {
+        GeneralManagementAssistantId reviewer = new GeneralManagementAssistantId(
+            caller.actingAs(Role.GENERAL_MANAGEMENT_ASSISTANT)
+        );
         boolean statesSecurement = request.securementDate() != null;
         SecurementDate securementDate = statesSecurement
             ? new SecurementDate(request.securementDate())
@@ -65,7 +72,7 @@ public final class FieldSheetWireMapper implements WireMapper {
 
         return new ApproveFieldSheet(
             new FieldSheetId(fieldSheetId),
-            new GeneralManagementAssistantId(request.reviewer()),
+            reviewer,
             new BeneficiaryLegalDocument(
                 LegalDocumentType.valueOf(request.beneficiaryDocumentType()),
                 request.beneficiaryDocumentNumber()
@@ -76,8 +83,11 @@ public final class FieldSheetWireMapper implements WireMapper {
         );
     }
 
-    public static RejectFieldSheet toRejectFieldSheet(UUID fieldSheetId, RejectFieldSheetRequest request) {
-        return new RejectFieldSheet(new FieldSheetId(fieldSheetId), new GeneralManagementAssistantId(request.reviewer()));
+    public static RejectFieldSheet toRejectFieldSheet(UUID fieldSheetId, Caller caller) {
+        return new RejectFieldSheet(
+            new FieldSheetId(fieldSheetId),
+            new GeneralManagementAssistantId(caller.actingAs(Role.GENERAL_MANAGEMENT_ASSISTANT))
+        );
     }
 
     public static RelinkFieldSheet toRelinkFieldSheet(UUID fieldSheetId, RelinkFieldSheetRequest request) {
@@ -98,10 +108,6 @@ public final class FieldSheetWireMapper implements WireMapper {
 
     public static ScanUploadSlot toScanUploadSlot() {
         return new ScanUploadSlot();
-    }
-
-    public static FieldSheetCreatedResponse toCreatedResponse(FieldSheetId fieldSheetId) {
-        return new FieldSheetCreatedResponse(fieldSheetId.value());
     }
 
     public static FieldSheetsResponse toFieldSheetsResponse(FieldSheetsResult result) {

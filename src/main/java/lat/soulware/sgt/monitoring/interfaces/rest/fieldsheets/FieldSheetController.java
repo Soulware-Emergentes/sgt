@@ -16,18 +16,24 @@ import lat.soulware.sgt.monitoring.application.commands.fieldsheets.FieldSheetCo
 import lat.soulware.sgt.monitoring.application.queries.fieldsheets.FieldSheetQueryService;
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.mappers.FieldSheetWireMapper;
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.requests.ApproveFieldSheetRequest;
-import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.requests.RejectFieldSheetRequest;
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.requests.RelinkFieldSheetRequest;
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.requests.SubmitFieldSheetRequest;
-import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.FieldSheetCreatedResponse;
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.FieldSheetResponse;
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.FieldSheetsResponse;
 import lat.soulware.sgt.monitoring.interfaces.rest.fieldsheets.responses.ScanLinkResponse;
+import lat.soulware.sgt.monitoring.publishedlanguage.FieldSheetId;
+import lat.soulware.sgt.shared.interfaces.rest.security.Caller;
 
 /**
  * Field sheets, from the field agent's upload to the assistant's review. The scanned PDF goes
  * straight to the object store through a signed link; the field sheet is then submitted with the
  * key it was uploaded under.
+ *
+ * <p>Submitting, approving and rejecting take the {@link Caller} the request's token names. Who submits
+ * or reviews is that caller, never a field of the body, refused when not acting in the role recorded.
+ *
+ * <p>Submitting answers with the field sheet it created, and approving, rejecting and relinking with
+ * the field sheet as it stands afterward.
  */
 @RestController
 @RequestMapping("/api/v1")
@@ -53,10 +59,12 @@ public class FieldSheetController {
 
     @PostMapping("/field-sheets")
     @ResponseStatus(HttpStatus.CREATED)
-    public FieldSheetCreatedResponse submit(@RequestBody SubmitFieldSheetRequest request) {
-        return FieldSheetWireMapper.toCreatedResponse(
-            this.fieldSheetCommandService.submit(FieldSheetWireMapper.toSubmitFieldSheet(request))
+    public FieldSheetResponse submit(@RequestBody SubmitFieldSheetRequest request, Caller caller) {
+        FieldSheetId submitted = this.fieldSheetCommandService.submit(
+            FieldSheetWireMapper.toSubmitFieldSheet(request, caller)
         );
+
+        return this.fieldSheet(submitted.value());
     }
 
     @GetMapping("/field-sheets")
@@ -81,20 +89,30 @@ public class FieldSheetController {
     }
 
     @PostMapping("/field-sheets/{fieldSheetId}/approval")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void approve(@PathVariable UUID fieldSheetId, @RequestBody ApproveFieldSheetRequest request) {
-        this.fieldSheetCommandService.approve(FieldSheetWireMapper.toApproveFieldSheet(fieldSheetId, request));
+    public FieldSheetResponse approve(
+        @PathVariable UUID fieldSheetId,
+        @RequestBody ApproveFieldSheetRequest request,
+        Caller caller
+    ) {
+        this.fieldSheetCommandService.approve(FieldSheetWireMapper.toApproveFieldSheet(fieldSheetId, request, caller));
+
+        return this.fieldSheet(fieldSheetId);
     }
 
     @PostMapping("/field-sheets/{fieldSheetId}/rejection")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void reject(@PathVariable UUID fieldSheetId, @RequestBody RejectFieldSheetRequest request) {
-        this.fieldSheetCommandService.reject(FieldSheetWireMapper.toRejectFieldSheet(fieldSheetId, request));
+    public FieldSheetResponse reject(@PathVariable UUID fieldSheetId, Caller caller) {
+        this.fieldSheetCommandService.reject(FieldSheetWireMapper.toRejectFieldSheet(fieldSheetId, caller));
+
+        return this.fieldSheet(fieldSheetId);
     }
 
     @PostMapping("/field-sheets/{fieldSheetId}/relink")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void relink(@PathVariable UUID fieldSheetId, @RequestBody RelinkFieldSheetRequest request) {
+    public FieldSheetResponse relink(
+        @PathVariable UUID fieldSheetId,
+        @RequestBody RelinkFieldSheetRequest request
+    ) {
         this.fieldSheetCommandService.relink(FieldSheetWireMapper.toRelinkFieldSheet(fieldSheetId, request));
+
+        return this.fieldSheet(fieldSheetId);
     }
 }

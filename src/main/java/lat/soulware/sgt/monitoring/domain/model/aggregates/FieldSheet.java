@@ -18,6 +18,7 @@ import lat.soulware.sgt.monitoring.domain.model.exceptions.MissingSubmissionDate
 import lat.soulware.sgt.monitoring.domain.model.exceptions.MissingSubmitterException;
 import lat.soulware.sgt.monitoring.domain.model.exceptions.MissingTaskCodeException;
 import lat.soulware.sgt.monitoring.domain.model.exceptions.ReviewBeforeSubmissionException;
+import lat.soulware.sgt.monitoring.domain.model.exceptions.ReviewerIsSubmitterException;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.FieldSheetScan;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.FieldSheetStatus;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.Supply;
@@ -202,6 +203,7 @@ public class FieldSheet extends AggregateRoot<FieldSheetId> {
      * @throws FieldSheetAlreadyReviewedException if the field sheet was already approved or rejected
      * @throws FieldSheetNotDeliveredException    if poi has not accepted the field sheet's delivery
      * @throws ReviewBeforeSubmissionException    if {@code reviewDate} precedes the submission
+     * @throws ReviewerIsSubmitterException      if the reviewer is the field agent who submitted it
      */
     public void approve(
         GeneralManagementAssistantId reviewer,
@@ -229,6 +231,7 @@ public class FieldSheet extends AggregateRoot<FieldSheetId> {
      * @throws FieldSheetAlreadyReviewedException if the field sheet was already approved or rejected
      * @throws FieldSheetNotDeliveredException    if poi has not accepted the field sheet's delivery
      * @throws ReviewBeforeSubmissionException    if {@code reviewDate} precedes the submission
+     * @throws ReviewerIsSubmitterException      if the reviewer is the field agent who submitted it
      */
     public void reject(GeneralManagementAssistantId reviewer, LocalDateTime reviewDate) {
         this.review(reviewer, reviewDate, FieldSheetStatus.REJECTED);
@@ -315,6 +318,10 @@ public class FieldSheet extends AggregateRoot<FieldSheetId> {
         }
         if (reviewDate.isBefore(this.submissionDate)) {
             throw new ReviewBeforeSubmissionException(reviewDate, this.submissionDate);
+        }
+        boolean reviewsOwnSubmission = reviewer.value().equals(this.submittedBy.value());
+        if (reviewsOwnSubmission) {
+            throw new ReviewerIsSubmitterException(this.id);
         }
         this.status = outcome;
         this.reviewedBy = reviewer;
