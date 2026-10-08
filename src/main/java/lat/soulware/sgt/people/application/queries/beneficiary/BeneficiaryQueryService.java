@@ -7,7 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lat.soulware.sgt.people.application.queries.beneficiary.criteria.BeneficiariesByDocument;
 import lat.soulware.sgt.people.application.queries.beneficiary.projections.BeneficiaryProjection;
-import lat.soulware.sgt.people.application.queries.beneficiary.results.BeneficiaryResult;
+import lat.soulware.sgt.people.application.queries.beneficiary.results.BeneficiariesResult;
 import lat.soulware.sgt.shared.application.queries.QueryService;
 
 /** The read entry point for beneficiaries. */
@@ -21,10 +21,12 @@ public class BeneficiaryQueryService implements QueryService {
         this.beneficiaryProjection = beneficiaryProjection;
     }
 
-    public List<BeneficiaryResult> byDocument(BeneficiariesByDocument criteria) {
+    public BeneficiariesResult byDocument(BeneficiariesByDocument criteria) {
         if (criteria.documents().isEmpty()) {
-            return List.of();
+            return new BeneficiariesResult(List.of());
         }
-        return this.beneficiaryProjection.findByDocuments(criteria.documents().stream().distinct().toList());
+        BeneficiariesByDocument distinct = new BeneficiariesByDocument(criteria.documents().stream().distinct().toList());
+
+        return new BeneficiariesResult(this.beneficiaryProjection.findByDocuments(distinct));
     }
 }

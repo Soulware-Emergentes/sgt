@@ -1,6 +1,9 @@
 package lat.soulware.sgt.people.publishedlanguage;
 
 import java.time.LocalDate;
+import java.util.Objects;
+
+import lat.soulware.sgt.shared.domain.model.valueobjects.ValueObject;
 
 /**
  * A beneficiary's personal data, as the beneficiary registry holds it.
@@ -19,5 +22,9 @@ public record BeneficiaryProfile(
     String maternalSurname,
     LocalDate dateOfBirth,
     String ubigeo
-) {
+) implements ValueObject {
+
+    public BeneficiaryProfile {
+        Objects.requireNonNull(document, "document");
+    }
 }

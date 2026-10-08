@@ -9,14 +9,7 @@ import lat.soulware.sgt.shared.application.queries.criteria.QueryCriteria;
  *
  * @param documents the documents, copied defensively
  */
-public record BeneficiariesByDocument(List<Document> documents) implements QueryCriteria {
-
-    /**
-     * @param type   the name of the document type
-     * @param number the document number
-     */
-    public record Document(String type, String number) {
-    }
+public record BeneficiariesByDocument(List<BeneficiaryByDocument> documents) implements QueryCriteria {
 
     public BeneficiariesByDocument {
         documents = List.copyOf(documents);

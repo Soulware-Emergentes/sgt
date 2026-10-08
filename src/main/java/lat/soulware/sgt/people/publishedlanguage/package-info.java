@@ -1,5 +1,5 @@
 /**
  * The identities other modules use to refer to people, and the records the people API answers with.
  */
-@org.springframework.modulith.NamedInterface("publishedlanguage")
+@org.springframework.modulith.NamedInterface("published-language")
 package lat.soulware.sgt.people.publishedlanguage;

@@ -6,13 +6,13 @@ import java.util.UUID;
 import lat.soulware.sgt.shared.application.queries.criteria.QueryCriteria;
 
 /**
- * The field agents to look up, by directory account GUID.
+ * The staff members to look up, by directory account GUID.
  *
  * @param ids the GUIDs, copied defensively
  */
-public record FieldAgentsById(List<UUID> ids) implements QueryCriteria {
+public record StaffMembersById(List<UUID> ids) implements QueryCriteria {
 
-    public FieldAgentsById {
+    public StaffMembersById {
         ids = List.copyOf(ids);
     }
 }

@@ -7,6 +7,8 @@ import lat.soulware.sgt.people.publishedlanguage.BeneficiaryLegalDocument;
 import lat.soulware.sgt.people.publishedlanguage.BeneficiaryProfile;
 import lat.soulware.sgt.people.publishedlanguage.FieldAgentId;
 import lat.soulware.sgt.people.publishedlanguage.FieldAgentProfile;
+import lat.soulware.sgt.people.publishedlanguage.GeneralManagementAssistantId;
+import lat.soulware.sgt.people.publishedlanguage.GeneralManagementAssistantProfile;
 import lat.soulware.sgt.shared.ModuleApi;
 
 /**
@@ -28,4 +30,12 @@ public interface PeopleApi extends ModuleApi {
      * @return the profiles found, one per distinct identity, in unspecified order
      */
     List<FieldAgentProfile> findFieldAgents(Collection<FieldAgentId> ids);
+
+    /**
+     * @param ids the identities of the general management assistants to look up
+     * @return the profiles found, one per distinct identity, in unspecified order
+     */
+    List<GeneralManagementAssistantProfile> findGeneralManagementAssistants(
+        Collection<GeneralManagementAssistantId> ids
+    );
 }

@@ -5,9 +5,9 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import lat.soulware.sgt.people.application.queries.staff.criteria.FieldAgentsById;
-import lat.soulware.sgt.people.application.queries.staff.projections.FieldAgentProjection;
-import lat.soulware.sgt.people.application.queries.staff.results.FieldAgentResult;
+import lat.soulware.sgt.people.application.queries.staff.criteria.StaffMembersById;
+import lat.soulware.sgt.people.application.queries.staff.projections.PersonProjection;
+import lat.soulware.sgt.people.application.queries.staff.results.StaffMembersResult;
 import lat.soulware.sgt.shared.application.queries.QueryService;
 
 /** The read entry point for staff. */
@@ -15,16 +15,28 @@ import lat.soulware.sgt.shared.application.queries.QueryService;
 @Service
 public class StaffQueryService implements QueryService {
 
-    private final FieldAgentProjection fieldAgentProjection;
+    private final PersonProjection personProjection;
 
-    public StaffQueryService(FieldAgentProjection fieldAgentProjection) {
-        this.fieldAgentProjection = fieldAgentProjection;
+    public StaffQueryService(PersonProjection personProjection) {
+        this.personProjection = personProjection;
     }
 
-    public List<FieldAgentResult> fieldAgentsById(FieldAgentsById criteria) {
+    /**
+     * Both roles resolve the same way: the directory knows people, not what they do in sgt. The two
+     * methods keep the role sgt recorded each person in visible at the call site.
+     */
+    public StaffMembersResult fieldAgentsById(StaffMembersById criteria) {
+        return this.byId(criteria);
+    }
+
+    public StaffMembersResult generalManagementAssistantsById(StaffMembersById criteria) {
+        return this.byId(criteria);
+    }
+
+    private StaffMembersResult byId(StaffMembersById criteria) {
         if (criteria.ids().isEmpty()) {
-            return List.of();
+            return new StaffMembersResult(List.of());
         }
-        return this.fieldAgentProjection.findByIds(criteria.ids().stream().distinct().toList());
+        return new StaffMembersResult(this.personProjection.findByIds(criteria.ids().stream().distinct().toList()));
     }
 }

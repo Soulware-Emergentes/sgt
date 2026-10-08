@@ -9,16 +9,19 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
-import lat.soulware.sgt.people.application.queries.beneficiary.criteria.BeneficiariesByDocument.Document;
+import lat.soulware.sgt.people.application.queries.beneficiary.criteria.BeneficiariesByDocument;
+import lat.soulware.sgt.people.application.queries.beneficiary.criteria.BeneficiaryByDocument;
 import lat.soulware.sgt.people.application.queries.beneficiary.projections.BeneficiaryProjection;
 import lat.soulware.sgt.people.application.queries.beneficiary.results.BeneficiaryResult;
 import lat.soulware.sgt.people.publishedlanguage.BeneficiaryLegalDocument;
 import lat.soulware.sgt.people.publishedlanguage.LegalDocumentType;
 import lat.soulware.sgt.shared.domain.model.exceptions.DomainException;
+import lat.soulware.sgt.shared.infrastructure.clients.ServiceTokens;
 import lat.soulware.sgt.shared.infrastructure.exceptions.InfrastructureException;
 
 /**
- * Reads beneficiaries from the beneficiary registry's v2 lookup endpoint. The registry answers at
+ * Reads beneficiaries from the beneficiary registry's v1 lookup endpoint, with a token staff issues
+ * to sgt for the registry. The registry answers at
  * most {@value #MAX_LOOKUP_SIZE} documents per request, so a larger batch is sent in chunks. The
  * documents it does not know come back under {@code notFound} and are left out here.
  */
@@ -26,27 +29,28 @@ import lat.soulware.sgt.shared.infrastructure.exceptions.InfrastructureException
 public class HttpBeneficiaryProjection implements BeneficiaryProjection {
 
     private static final int MAX_LOOKUP_SIZE = 100;
-    private static final String LOOKUP_PATH = "/api/v2/beneficiaries/lookup";
-    private static final String API_KEY_HEADER = "X-API-KEY";
+    private static final String LOOKUP_PATH = "/api/v1/beneficiaries/lookup";
+    private static final String BENEFICIARIES_REGISTRATION = "beneficiaries";
 
     private final RestClient client;
 
     public HttpBeneficiaryProjection(
         RestClient.Builder builder,
         @Value("${people.beneficiaries.base-url}") String baseUrl,
-        @Value("${people.beneficiaries.api-key}") String apiKey
+        ServiceTokens serviceTokens
     ) {
         this.client = builder
             .baseUrl(baseUrl)
-            .defaultHeader(API_KEY_HEADER, apiKey)
+            .requestInterceptor(serviceTokens.bearerFor(BENEFICIARIES_REGISTRATION))
             .build();
     }
 
     @Override
-    public List<BeneficiaryResult> findByDocuments(List<Document> documents) {
+    public List<BeneficiaryResult> findByDocuments(BeneficiariesByDocument criteria) {
+        List<BeneficiaryByDocument> documents = criteria.documents();
         List<BeneficiaryResult> found = new ArrayList<>();
         for (int from = 0; from < documents.size(); from += MAX_LOOKUP_SIZE) {
-            List<Document> chunk = documents.subList(from, Math.min(from + MAX_LOOKUP_SIZE, documents.size()));
+            List<BeneficiaryByDocument> chunk = documents.subList(from, Math.min(from + MAX_LOOKUP_SIZE, documents.size()));
             this.lookup(chunk).found().stream()
                 .map(HttpBeneficiaryProjection::toResult)
                 .forEach(found::add);
@@ -54,7 +58,7 @@ public class HttpBeneficiaryProjection implements BeneficiaryProjection {
         return found;
     }
 
-    private BeneficiaryLookupResponse lookup(List<Document> chunk) {
+    private BeneficiaryLookupResponse lookup(List<BeneficiaryByDocument> chunk) {
         List<LegalDocumentResource> wanted = chunk.stream()
             .map(document -> new LegalDocumentResource(document.type(), document.number()))
             .toList();
