@@ -45,5 +45,5 @@ logs/
 src/test/java/lat/soulware/sgt/*
 !src/test/java/lat/soulware/sgt/ApplicationLaunchIT.java
 .github/
-docs/
+/docs/
 deploy/
