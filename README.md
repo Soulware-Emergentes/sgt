@@ -4,6 +4,22 @@ A starting point for building a modular monolith with Spring Boot, structured ar
 
 Java 25, Spring Boot 4.1, Spring Modulith 2.1.
 
+## Authentication
+
+Every request carries a person's access token from staff, the identity provider. sgt accepts a token only when it is signed with a key staff publishes, names `STAFF_ISSUER` as its issuer, carries `SGT_TOKEN_AUDIENCE` in its audience, and is marked `token_use: user`. Anything else is answered 401 with the usual error envelope and a `WWW-Authenticate: Bearer` header.
+
+Who the caller is comes from the token alone. `CallerArgumentResolver` hands each controller a `Caller` read from `sub` and `roles`, under the claim names set in `sgt.security.claims.*`. The field sheet mapper turns it into the actor a command needs, and refuses with 403 a caller not acting in the operation's role:
+
+| Endpoints | Role |
+|---|---|
+| Pending tasks, upload link, submitting a field sheet | `field-agent` |
+| Field sheet list, detail and scan, approving, rejecting, relinking | `general-management-assistant` |
+| Task detail | Either |
+
+`admin` passes every check. A person holding several roles acts as one at a time and switches by getting a new token, and nobody reviews a field sheet they submitted.
+
+sgt calls poi and the staff directory as itself, with tokens it gets from staff through the client credentials grant under the `poi` and `directory` registrations. The person behind a request is never forwarded. The beneficiary registry is still called with its API key.
+
 ## Requirements
 
 Docker has to be available for `./mvnw verify`. That half of the suite starts a throwaway Postgres container, so nothing needs to be installed or running beforehand, and it never touches a local database.
