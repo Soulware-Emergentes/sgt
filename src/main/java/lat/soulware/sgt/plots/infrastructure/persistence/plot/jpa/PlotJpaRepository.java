@@ -1,6 +1,7 @@
 package lat.soulware.sgt.plots.infrastructure.persistence.plot.jpa;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -19,8 +20,13 @@ public interface PlotJpaRepository extends JpaRepository<PlotEntity, UUID> {
      * @return the stored plots touching or overlapping the boundary
      */
     @Query(nativeQuery = true, value = """
-        SELECT p.id, p.boundary
+        SELECT p.id, p.owner_document_type, p.owner_document_number, p.boundary, p.ubigeo, p.registration_date
         FROM plots p
         WHERE ST_Intersects(p.footprint, ST_Transform(ST_GeomFromText(:wkt, :srid), 4326)::geography)""")
     List<PlotEntity> findIntersecting(@Param("wkt") String wkt, @Param("srid") int srid);
+
+    Optional<PlotEntity> findByOwnerDocumentTypeAndOwnerDocumentNumber(
+        String ownerDocumentType,
+        String ownerDocumentNumber
+    );
 }

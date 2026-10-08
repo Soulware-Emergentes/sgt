@@ -1,7 +1,9 @@
 package lat.soulware.sgt.plots.domain.repositories;
 
 import java.util.List;
+import java.util.Optional;
 
+import lat.soulware.sgt.people.publishedlanguage.BeneficiaryLegalDocument;
 import lat.soulware.sgt.plots.domain.model.aggregates.Plot;
 import lat.soulware.sgt.plots.domain.model.valueobjects.PlotBoundary;
 import lat.soulware.sgt.plots.domain.model.valueobjects.PlotId;
@@ -19,4 +21,10 @@ public interface PlotRepository extends DomainRepository<Plot, PlotId> {
      * @return the plots intersecting it, empty when none do
      */
     List<Plot> findIntersecting(PlotBoundary boundary);
+
+    /**
+     * @param owner the legal document of a beneficiary
+     * @return the plot registered to them, empty when they hold none
+     */
+    Optional<Plot> findOwnedBy(BeneficiaryLegalDocument owner);
 }

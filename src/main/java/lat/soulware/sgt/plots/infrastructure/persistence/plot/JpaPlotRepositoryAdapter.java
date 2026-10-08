@@ -2,16 +2,20 @@ package lat.soulware.sgt.plots.infrastructure.persistence.plot;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.locationtech.jts.geom.Polygon;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Repository;
 
+import lat.soulware.sgt.people.publishedlanguage.BeneficiaryLegalDocument;
+import lat.soulware.sgt.people.publishedlanguage.LegalDocumentType;
 import lat.soulware.sgt.plots.domain.model.aggregates.Plot;
 import lat.soulware.sgt.plots.domain.model.exceptions.PlotNotFoundException;
 import lat.soulware.sgt.plots.domain.model.valueobjects.PlotBoundary;
 import lat.soulware.sgt.plots.domain.model.valueobjects.PlotId;
+import lat.soulware.sgt.plots.domain.model.valueobjects.Ubigeo;
 import lat.soulware.sgt.plots.domain.repositories.PlotRepository;
 import lat.soulware.sgt.plots.infrastructure.persistence.plot.jpa.PlotEntity;
 import lat.soulware.sgt.plots.infrastructure.persistence.plot.jpa.PlotJpaRepository;
@@ -41,6 +45,12 @@ public class JpaPlotRepositoryAdapter extends JpaRepositoryToDomainRepositoryAda
     }
 
     @Override
+    public Optional<Plot> findOwnedBy(BeneficiaryLegalDocument owner) {
+        return this.delegate.findByOwnerDocumentTypeAndOwnerDocumentNumber(owner.type().name(), owner.number())
+            .map(this::toAggregate);
+    }
+
+    @Override
     protected PlotJpaRepository delegate() {
         return this.delegate;
     }
@@ -52,12 +62,32 @@ public class JpaPlotRepositoryAdapter extends JpaRepositoryToDomainRepositoryAda
 
     @Override
     protected PlotEntity toEntity(Plot aggregate) {
-        return new PlotEntity(aggregate.getId().value(), PlotGeometries.toPolygon(aggregate.getBoundary()));
+        BeneficiaryLegalDocument owner = aggregate.getOwner();
+
+        return new PlotEntity(
+            aggregate.getId().value(),
+            owner.type().name(),
+            owner.number(),
+            PlotGeometries.toPolygon(aggregate.getBoundary()),
+            aggregate.getUbigeo().value(),
+            aggregate.getRegistrationDate()
+        );
     }
 
     @Override
     protected Plot toAggregate(PlotEntity entity) {
-        return Plot.reconstitute(new PlotId(entity.getId()), PlotGeometries.toBoundary(entity.getBoundary()));
+        BeneficiaryLegalDocument owner = new BeneficiaryLegalDocument(
+            LegalDocumentType.valueOf(entity.getOwnerDocumentType()),
+            entity.getOwnerDocumentNumber()
+        );
+
+        return Plot.reconstitute(
+            new PlotId(entity.getId()),
+            owner,
+            PlotGeometries.toBoundary(entity.getBoundary()),
+            new Ubigeo(entity.getUbigeo()),
+            entity.getRegistrationDate()
+        );
     }
 
     @Override
