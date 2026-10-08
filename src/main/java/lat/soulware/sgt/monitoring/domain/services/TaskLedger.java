@@ -42,12 +42,12 @@ public interface TaskLedger extends DomainService {
     RelinkOutcome relink(TaskCode taskCode, TaskCode fromTaskCode, FieldSheetId fieldSheetId);
 
     /**
-     * Completes a task whose delivery was reviewed and confirmed.
+     * Completes a task, the field sheet that delivered it approved.
      *
      * @param taskCode     the task
      * @param fieldSheetId the approved field sheet that made the delivery
      */
-    void confirmCompletion(TaskCode taskCode, FieldSheetId fieldSheetId);
+    void complete(TaskCode taskCode, FieldSheetId fieldSheetId);
 
     /**
      * Puts a task back on poi's pending list, its delivery rejected on review.
@@ -55,5 +55,5 @@ public interface TaskLedger extends DomainService {
      * @param taskCode     the task
      * @param fieldSheetId the rejected field sheet that made the delivery
      */
-    void rejectDelivery(TaskCode taskCode, FieldSheetId fieldSheetId);
+    void reopen(TaskCode taskCode, FieldSheetId fieldSheetId);
 }

@@ -4,7 +4,7 @@ import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.stereotype.Component;
 
 import lat.soulware.sgt.monitoring.application.commands.fieldsheets.FieldSheetCommandService;
-import lat.soulware.sgt.monitoring.application.commands.fieldsheets.intent.ConfirmFieldSheetDelivery;
+import lat.soulware.sgt.monitoring.application.commands.fieldsheets.intent.CompleteTask;
 import lat.soulware.sgt.monitoring.publishedlanguage.FieldSheetApproved;
 import lat.soulware.sgt.shared.interfaces.events.EventHandler;
 
@@ -20,6 +20,6 @@ public class FieldSheetApprovedHandler implements EventHandler {
 
     @ApplicationModuleListener
     public void on(FieldSheetApproved event) {
-        this.fieldSheetCommandService.confirmDelivery(new ConfirmFieldSheetDelivery(event.fieldSheetId()));
+        this.fieldSheetCommandService.completeTask(new CompleteTask(event.fieldSheetId()));
     }
 }

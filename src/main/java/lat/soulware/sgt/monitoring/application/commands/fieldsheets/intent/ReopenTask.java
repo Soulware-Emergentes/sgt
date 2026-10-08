@@ -4,9 +4,9 @@ import lat.soulware.sgt.monitoring.publishedlanguage.FieldSheetId;
 import lat.soulware.sgt.shared.application.commands.intent.CommandIntent;
 
 /**
- * Reject a field sheet's delivery in poi, once the field sheet is rejected.
+ * Reopen the poi task a field sheet was rejected for, so it is on the pending list again.
  *
- * @param fieldSheetId the reviewed field sheet
+ * @param fieldSheetId the rejected field sheet
  */
-public record RejectFieldSheetDelivery(FieldSheetId fieldSheetId) implements CommandIntent {
+public record ReopenTask(FieldSheetId fieldSheetId) implements CommandIntent {
 }

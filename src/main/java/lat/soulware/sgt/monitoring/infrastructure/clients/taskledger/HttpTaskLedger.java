@@ -18,6 +18,7 @@ import lat.soulware.sgt.monitoring.domain.model.valueobjects.RelinkResult;
 import lat.soulware.sgt.monitoring.domain.model.valueobjects.TaskCode;
 import lat.soulware.sgt.monitoring.publishedlanguage.FieldSheetId;
 import lat.soulware.sgt.monitoring.domain.services.TaskLedger;
+import lat.soulware.sgt.shared.infrastructure.clients.ServiceTokens;
 import lat.soulware.sgt.shared.infrastructure.exceptions.InfrastructureException;
 
 /**
@@ -32,21 +33,21 @@ import lat.soulware.sgt.shared.infrastructure.exceptions.InfrastructureException
 public class HttpTaskLedger implements TaskLedger {
 
     private static final String DELIVERY_PATH = "/api/v1/tasks/{taskCode}/delivery";
-    private static final String CONFIRMATION_PATH = DELIVERY_PATH + "/confirmation";
-    private static final String REJECTION_PATH = DELIVERY_PATH + "/rejection";
+    private static final String COMPLETION_PATH = "/api/v1/tasks/{taskCode}/completion";
+    private static final String REOPENING_PATH = "/api/v1/tasks/{taskCode}/reopening";
     private static final String RELINK_PATH = DELIVERY_PATH + "/relink";
-    private static final String API_KEY_HEADER = "X-API-KEY";
+    private static final String POI_REGISTRATION = "poi";
 
     private final RestClient client;
 
     public HttpTaskLedger(
         RestClient.Builder builder,
         @Value("${monitoring.poi.base-url}") String baseUrl,
-        @Value("${monitoring.poi.api-key}") String apiKey
+        ServiceTokens serviceTokens
     ) {
         this.client = builder
             .baseUrl(baseUrl)
-            .defaultHeader(API_KEY_HEADER, apiKey)
+            .requestInterceptor(serviceTokens.bearerFor(POI_REGISTRATION))
             .build();
     }
 
@@ -97,16 +98,16 @@ public class HttpTaskLedger implements TaskLedger {
     }
 
     @Override
-    public void confirmCompletion(TaskCode taskCode, FieldSheetId fieldSheetId) {
-        this.review(CONFIRMATION_PATH, taskCode, fieldSheetId, "Confirming");
+    public void complete(TaskCode taskCode, FieldSheetId fieldSheetId) {
+        this.report(COMPLETION_PATH, taskCode, fieldSheetId, "Completing");
     }
 
     @Override
-    public void rejectDelivery(TaskCode taskCode, FieldSheetId fieldSheetId) {
-        this.review(REJECTION_PATH, taskCode, fieldSheetId, "Rejecting");
+    public void reopen(TaskCode taskCode, FieldSheetId fieldSheetId) {
+        this.report(REOPENING_PATH, taskCode, fieldSheetId, "Reopening");
     }
 
-    private void review(String path, TaskCode taskCode, FieldSheetId fieldSheetId, String action) {
+    private void report(String path, TaskCode taskCode, FieldSheetId fieldSheetId, String action) {
         try {
             this.client.post()
                 .uri(path, taskCode.value())
@@ -115,7 +116,7 @@ public class HttpTaskLedger implements TaskLedger {
                 .toBodilessEntity();
         } catch (RestClientException e) {
             throw new InfrastructureException(
-                "%s the delivery of task %s failed".formatted(action, taskCode.value()),
+                "%s task %s failed".formatted(action, taskCode.value()),
                 e
             );
         }

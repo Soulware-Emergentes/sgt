@@ -3,16 +3,16 @@ package lat.soulware.sgt.monitoring.application.commands.fieldsheets;
 import org.springframework.stereotype.Service;
 
 import lat.soulware.sgt.monitoring.application.commands.fieldsheets.handlers.ApproveFieldSheetHandler;
-import lat.soulware.sgt.monitoring.application.commands.fieldsheets.handlers.ConfirmFieldSheetDeliveryHandler;
+import lat.soulware.sgt.monitoring.application.commands.fieldsheets.handlers.CompleteTaskHandler;
 import lat.soulware.sgt.monitoring.application.commands.fieldsheets.handlers.DeliverFieldSheetHandler;
-import lat.soulware.sgt.monitoring.application.commands.fieldsheets.handlers.RejectFieldSheetDeliveryHandler;
+import lat.soulware.sgt.monitoring.application.commands.fieldsheets.handlers.ReopenTaskHandler;
 import lat.soulware.sgt.monitoring.application.commands.fieldsheets.handlers.RejectFieldSheetHandler;
 import lat.soulware.sgt.monitoring.application.commands.fieldsheets.handlers.RelinkFieldSheetHandler;
 import lat.soulware.sgt.monitoring.application.commands.fieldsheets.handlers.SubmitFieldSheetHandler;
 import lat.soulware.sgt.monitoring.application.commands.fieldsheets.intent.ApproveFieldSheet;
-import lat.soulware.sgt.monitoring.application.commands.fieldsheets.intent.ConfirmFieldSheetDelivery;
+import lat.soulware.sgt.monitoring.application.commands.fieldsheets.intent.CompleteTask;
 import lat.soulware.sgt.monitoring.application.commands.fieldsheets.intent.DeliverFieldSheet;
-import lat.soulware.sgt.monitoring.application.commands.fieldsheets.intent.RejectFieldSheetDelivery;
+import lat.soulware.sgt.monitoring.application.commands.fieldsheets.intent.ReopenTask;
 import lat.soulware.sgt.monitoring.application.commands.fieldsheets.intent.RejectFieldSheet;
 import lat.soulware.sgt.monitoring.application.commands.fieldsheets.intent.RelinkFieldSheet;
 import lat.soulware.sgt.monitoring.application.commands.fieldsheets.intent.SubmitFieldSheet;
@@ -28,8 +28,8 @@ public class FieldSheetCommandService implements CommandService {
     private final RejectFieldSheetHandler rejectFieldSheetHandler;
     private final RelinkFieldSheetHandler relinkFieldSheetHandler;
     private final DeliverFieldSheetHandler deliverFieldSheetHandler;
-    private final ConfirmFieldSheetDeliveryHandler confirmFieldSheetDeliveryHandler;
-    private final RejectFieldSheetDeliveryHandler rejectFieldSheetDeliveryHandler;
+    private final CompleteTaskHandler completeTaskHandler;
+    private final ReopenTaskHandler reopenTaskHandler;
 
     public FieldSheetCommandService(
         SubmitFieldSheetHandler submitFieldSheetHandler,
@@ -37,16 +37,16 @@ public class FieldSheetCommandService implements CommandService {
         RejectFieldSheetHandler rejectFieldSheetHandler,
         RelinkFieldSheetHandler relinkFieldSheetHandler,
         DeliverFieldSheetHandler deliverFieldSheetHandler,
-        ConfirmFieldSheetDeliveryHandler confirmFieldSheetDeliveryHandler,
-        RejectFieldSheetDeliveryHandler rejectFieldSheetDeliveryHandler
+        CompleteTaskHandler completeTaskHandler,
+        ReopenTaskHandler reopenTaskHandler
     ) {
         this.submitFieldSheetHandler = submitFieldSheetHandler;
         this.approveFieldSheetHandler = approveFieldSheetHandler;
         this.rejectFieldSheetHandler = rejectFieldSheetHandler;
         this.relinkFieldSheetHandler = relinkFieldSheetHandler;
         this.deliverFieldSheetHandler = deliverFieldSheetHandler;
-        this.confirmFieldSheetDeliveryHandler = confirmFieldSheetDeliveryHandler;
-        this.rejectFieldSheetDeliveryHandler = rejectFieldSheetDeliveryHandler;
+        this.completeTaskHandler = completeTaskHandler;
+        this.reopenTaskHandler = reopenTaskHandler;
     }
 
     public FieldSheetId submit(SubmitFieldSheet command) {
@@ -69,11 +69,11 @@ public class FieldSheetCommandService implements CommandService {
         this.deliverFieldSheetHandler.handle(command);
     }
 
-    public void confirmDelivery(ConfirmFieldSheetDelivery command) {
-        this.confirmFieldSheetDeliveryHandler.handle(command);
+    public void completeTask(CompleteTask command) {
+        this.completeTaskHandler.handle(command);
     }
 
-    public void rejectDelivery(RejectFieldSheetDelivery command) {
-        this.rejectFieldSheetDeliveryHandler.handle(command);
+    public void reopenTask(ReopenTask command) {
+        this.reopenTaskHandler.handle(command);
     }
 }

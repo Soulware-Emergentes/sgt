@@ -4,9 +4,9 @@ import lat.soulware.sgt.monitoring.publishedlanguage.FieldSheetId;
 import lat.soulware.sgt.shared.application.commands.intent.CommandIntent;
 
 /**
- * Confirm a field sheet's delivery in poi, once the field sheet is approved.
+ * Complete the poi task a field sheet was approved for.
  *
  * @param fieldSheetId the approved field sheet
  */
-public record ConfirmFieldSheetDelivery(FieldSheetId fieldSheetId) implements CommandIntent {
+public record CompleteTask(FieldSheetId fieldSheetId) implements CommandIntent {
 }
