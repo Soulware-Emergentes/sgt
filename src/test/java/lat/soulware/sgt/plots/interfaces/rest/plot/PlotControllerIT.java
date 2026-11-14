@@ -101,7 +101,30 @@ class PlotControllerIT extends PostgresIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body)
             )
-            .andExpect(status().isUnprocessableContent());
+            .andExpect(status().isUnprocessableContent())
+            .andExpect(jsonPath("$.code").value("error.plots.beneficiary-already-holds-plot"))
+            .andExpect(jsonPath("$.details").doesNotExist());
+    }
+
+    @Test
+    void aPlotOverlappingARegisteredOneIsRefusedNamingIt() throws Exception {
+        int ground = PLOTS.incrementAndGet();
+        String registered = this.register(asFieldAgent(), ground)
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString()
+            .replaceAll(".*\"id\":\"([^\"]+)\".*", "$1");
+
+        this.mockMvc.perform(post("/api/v1/plots")
+                .header("Authorization", asFieldAgent())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body(ownerOf(PLOTS.incrementAndGet()), ground))
+            )
+            .andExpect(status().isUnprocessableContent())
+            .andExpect(jsonPath("$.code").value("error.plots.overlapping-plot"))
+            .andExpect(jsonPath("$.message").isNotEmpty())
+            .andExpect(jsonPath("$.details.overlappingPlots").value(Matchers.contains(registered)));
     }
 
     @Test

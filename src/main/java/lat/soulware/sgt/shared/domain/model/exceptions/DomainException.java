@@ -1,6 +1,7 @@
 package lat.soulware.sgt.shared.domain.model.exceptions;
 
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Root of the domain exception hierarchy. Carries an i18n message key and its arguments.
@@ -78,6 +79,18 @@ public abstract sealed class DomainException extends RuntimeException permits
      */
     public Object[] getMessageArgs() {
         return this.messageArgs;
+    }
+
+    /**
+     * A failure that carries what a caller may act on beyond its message, by name: the entities it
+     * involves, say. Only the failures that have such details implement it.
+     */
+    public interface Detailed {
+
+        /**
+         * @return the details, by name
+         */
+        Map<String, Object> details();
     }
 
     /**
