@@ -6,9 +6,9 @@ import java.util.Locale;
  * Root of the domain exception hierarchy. Carries an i18n message key and its arguments.
  *
  * <p>The key is derived from the type, as {@code error.<module>.<rule>}, where the module is the
- * package segment preceding {@code .domain.} and the rule is the type's own name in kebab case with
- * the {@code Exception} suffix dropped. Every concrete subclass must resolve against the message
- * bundle.
+ * package segment preceding {@code .domain.}, or preceding {@code .publishedlanguage} for an
+ * exception guarding a published type, and the rule is the type's own name in kebab case with the
+ * {@code Exception} suffix dropped. Every concrete subclass must resolve against the message bundle.
  *
  * <p>Sealed over the four kinds of failure the domain recognises. Throw the most specific type that
  * fits.
@@ -27,6 +27,9 @@ public abstract sealed class DomainException extends RuntimeException permits
 
     /** Separates the module path from the layer path in a domain exception's package. */
     private static final String DOMAIN_SEGMENT = ".domain.";
+
+    /** Ends the package of an exception a module publishes alongside the type it guards. */
+    private static final String PUBLISHED_LANGUAGE_SEGMENT = ".publishedlanguage";
 
     /** Values interpolated into the resolved message. */
     private final transient Object[] messageArgs;
@@ -77,10 +80,16 @@ public abstract sealed class DomainException extends RuntimeException permits
         return this.messageArgs;
     }
 
-    /** The module a domain exception belongs to, taken from the segment preceding {@code .domain.}. */
+    /**
+     * The module a domain exception belongs to, taken from the segment preceding {@code .domain.},
+     * or preceding {@code .publishedlanguage} when the package ends there.
+     */
     private static String moduleOf(Class<?> type) {
         String packageName = type.getPackageName();
-        int layerBoundary = packageName.indexOf(DOMAIN_SEGMENT);
+        boolean isPublished = packageName.endsWith(PUBLISHED_LANGUAGE_SEGMENT);
+        int layerBoundary = isPublished
+            ? packageName.length() - PUBLISHED_LANGUAGE_SEGMENT.length()
+            : packageName.indexOf(DOMAIN_SEGMENT);
         String modulePath = layerBoundary < 0
             ? packageName
             : packageName.substring(0, layerBoundary);

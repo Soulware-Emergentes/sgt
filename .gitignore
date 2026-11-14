@@ -42,8 +42,10 @@ build/
 logs/
 
 ### Selfish
-src/test/java/lat/soulware/sgt/*
+src/test/java/lat/soulware/sgt/architecture/
 !src/test/java/lat/soulware/sgt/ApplicationLaunchIT.java
-.github/
-docs/
+!src/test/java/lat/soulware/sgt/support/
+.github/*
+!.github/workflows/
+/docs/
 deploy/
