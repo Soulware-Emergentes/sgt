@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
  *
  * @param status     the HTTP status code
  * @param error      the status reason phrase
+ * @param code       which failure it is, as its message key
  * @param message    the failure as a whole, resolved against the caller's locale
  * @param violations one entry per rejected field
  * @param timestamp  when the response was built
@@ -18,6 +19,7 @@ import org.springframework.http.HttpStatus;
 public record ValidationErrorResponse(
     int status,
     String error,
+    String code,
     String message,
     List<FieldError> violations,
     Instant timestamp
@@ -37,18 +39,21 @@ public record ValidationErrorResponse(
      * from it.
      *
      * @param status     the status this failure maps to
+     * @param code       the failure's message key
      * @param message    the resolved summary message
      * @param violations the rejected fields, copied defensively
      * @return the envelope to serialize
      */
     public static ValidationErrorResponse of(
         HttpStatus status,
+        String code,
         String message,
         List<FieldError> violations
     ) {
         return new ValidationErrorResponse(
             status.value(),
             status.getReasonPhrase(),
+            code,
             message,
             List.copyOf(violations),
             Instant.now()

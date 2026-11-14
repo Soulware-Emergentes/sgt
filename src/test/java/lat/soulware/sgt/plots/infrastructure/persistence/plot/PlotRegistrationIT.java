@@ -32,6 +32,7 @@ import lat.soulware.sgt.plots.application.commands.plot.intent.RegisterPlot;
 import lat.soulware.sgt.plots.domain.model.aggregates.Plot;
 import lat.soulware.sgt.plots.domain.model.exceptions.BeneficiaryAlreadyHoldsPlotException;
 import lat.soulware.sgt.plots.domain.model.exceptions.OverlappingPlotException;
+import lat.soulware.sgt.plots.domain.model.exceptions.PlotOutsideDistrictsException;
 import lat.soulware.sgt.plots.domain.model.valueobjects.PlotBoundary;
 import lat.soulware.sgt.plots.domain.model.valueobjects.PlotId;
 import lat.soulware.sgt.plots.domain.model.valueobjects.RegistrationDate;
@@ -56,6 +57,8 @@ class PlotRegistrationIT extends PostgresIntegrationTest {
 
     private static final RegistrationDate REGISTERED = new RegistrationDate(LocalDateTime.of(2026, 10, 1, 9, 0));
     private static final Ubigeo DISTRICT = new Ubigeo("150101");
+    /** The district of La Molina, in Lima, which the 18S squares near easting 287 000 lie in. */
+    private static final Ubigeo LA_MOLINA = new Ubigeo("150114");
     private static final AtomicInteger NEXT_DOCUMENT_NUMBER = new AtomicInteger(10_000_000);
 
     @Autowired
@@ -147,13 +150,30 @@ class PlotRegistrationIT extends PostgresIntegrationTest {
     @Transactional
     void aBeneficiaryWhoHoldsAPlotCannotBeRegisteredASecond() {
         BeneficiaryLegalDocument owner = newOwner();
-        PlotId held = this.registerPlotHandler.handle(new RegisterPlot(owner, square(285_000, 8_665_000, 100), DISTRICT));
+        PlotId held = this.registerPlotHandler.handle(new RegisterPlot(owner, square(285_000, 8_665_000, 100)));
 
-        RegisterPlot second = new RegisterPlot(owner, square(285_500, 8_665_000, 100), DISTRICT);
+        RegisterPlot second = new RegisterPlot(owner, square(285_500, 8_665_000, 100));
 
         assertThatExceptionOfType(BeneficiaryAlreadyHoldsPlotException.class)
             .isThrownBy(() -> this.registerPlotHandler.handle(second))
             .satisfies(exception -> assertThat(exception.getMessageArgs()).containsExactly(owner, held));
+    }
+
+    @Test
+    @Transactional
+    void aRegisteredPlotIsFiledUnderTheDistrictItLiesIn() {
+        PlotId registered = this.registerPlotHandler.handle(new RegisterPlot(newOwner(), square(287_000, 8_665_000, 100)));
+
+        assertThat(this.plotRepository.getById(registered).getUbigeo()).isEqualTo(LA_MOLINA);
+    }
+
+    @Test
+    @Transactional
+    void aPlotInNoDistrictIsRefused() {
+        RegisterPlot offshore = new RegisterPlot(newOwner(), square(100_000, 8_600_000, 100));
+
+        assertThatExceptionOfType(PlotOutsideDistrictsException.class)
+            .isThrownBy(() -> this.registerPlotHandler.handle(offshore));
     }
 
     @Test
