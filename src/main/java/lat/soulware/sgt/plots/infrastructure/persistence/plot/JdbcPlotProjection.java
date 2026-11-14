@@ -3,10 +3,12 @@ package lat.soulware.sgt.plots.infrastructure.persistence.plot;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.io.ParseException;
@@ -18,7 +20,10 @@ import org.springframework.stereotype.Component;
 import lat.soulware.sgt.plots.application.queries.plots.criteria.PlotById;
 import lat.soulware.sgt.plots.application.queries.plots.criteria.PlotOfOwner;
 import lat.soulware.sgt.plots.application.queries.plots.criteria.PlotsInRegion;
+import lat.soulware.sgt.plots.application.queries.plots.criteria.PlotsInView;
 import lat.soulware.sgt.plots.application.queries.plots.projections.PlotProjection;
+import lat.soulware.sgt.plots.application.queries.plots.results.CoordinateResult;
+import lat.soulware.sgt.plots.application.queries.plots.results.PlotFootprintResult;
 import lat.soulware.sgt.plots.application.queries.plots.results.PlotResult;
 import lat.soulware.sgt.plots.application.queries.plots.results.VertexResult;
 import lat.soulware.sgt.plots.domain.model.valueobjects.PlotBoundary;
@@ -28,6 +33,9 @@ import lat.soulware.sgt.shared.infrastructure.exceptions.InfrastructureException
  * Reads plots from the {@code plots} table. The boundary comes back as well-known text in its own
  * SRID and goes through {@link PlotGeometries}, the same mapping the repository stores it with, so
  * a plot reads the way it was surveyed.
+ *
+ * <p>A map view is answered from {@code footprint} instead, the boundary on WGS84 that the GiST index
+ * covers, so finding the plots in view never transforms a boundary.
  */
 @Component
 public class JdbcPlotProjection implements PlotProjection {
@@ -47,6 +55,13 @@ public class JdbcPlotProjection implements PlotProjection {
 
     private static final String FIND_OF_OWNER = COLUMNS + """
         WHERE owner_document_type = :documentType AND owner_document_number = :documentNumber""";
+
+    private static final String FIND_IN_VIEW = """
+        SELECT id, ubigeo, ST_AsText(footprint::geometry) AS footprint_wkt
+        FROM plots
+        WHERE ST_Intersects(footprint, ST_MakeEnvelope(:west, :south, :east, :north, 4326)::geography)
+        ORDER BY id
+        LIMIT :limit""";
 
     private final NamedParameterJdbcTemplate jdbc;
 
@@ -79,6 +94,34 @@ public class JdbcPlotProjection implements PlotProjection {
         return this.jdbc.query(FIND_OF_OWNER, parameters, (row, rowNumber) -> JdbcPlotProjection.toResult(row))
             .stream()
             .findFirst();
+    }
+
+    @Override
+    public List<PlotFootprintResult> findInView(PlotsInView criteria, int limit) {
+        MapSqlParameterSource parameters = new MapSqlParameterSource()
+            .addValue("west", criteria.west())
+            .addValue("south", criteria.south())
+            .addValue("east", criteria.east())
+            .addValue("north", criteria.north())
+            .addValue("limit", limit);
+
+        return this.jdbc.query(FIND_IN_VIEW, parameters, (row, rowNumber) -> new PlotFootprintResult(
+            row.getObject("id", UUID.class),
+            row.getString("ubigeo"),
+            JdbcPlotProjection.coordinatesOf(row.getString("footprint_wkt"))
+        ));
+    }
+
+    private static List<CoordinateResult> coordinatesOf(String wkt) {
+        try {
+            Polygon footprint = (Polygon) new WKTReader(new GeometryFactory()).read(wkt);
+            Coordinate[] ring = footprint.getExteriorRing().getCoordinates();
+            return Arrays.stream(ring)
+                .map(coordinate -> new CoordinateResult(coordinate.getX(), coordinate.getY()))
+                .toList();
+        } catch (ParseException e) {
+            throw new InfrastructureException("Stored plot footprint is not well-known text: %s".formatted(wkt), e);
+        }
     }
 
     private static PlotResult toResult(ResultSet row) throws SQLException {

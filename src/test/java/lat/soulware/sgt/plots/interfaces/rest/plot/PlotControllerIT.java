@@ -2,12 +2,15 @@ package lat.soulware.sgt.plots.interfaces.rest.plot;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.hamcrest.CustomMatcher;
+import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +34,8 @@ import lat.soulware.sgt.support.TestTokens;
 @AutoConfigureMockMvc
 class PlotControllerIT extends PostgresIntegrationTest {
 
-    private static final String UBIGEO = "250101";
+    /** The district of Putinza, in Yauyos, Lima, which every square of this class lies in. */
+    private static final String UBIGEO = "151023";
     private static final AtomicInteger PLOTS = new AtomicInteger();
 
     @Autowired
@@ -65,7 +69,7 @@ class PlotControllerIT extends PostgresIntegrationTest {
             )
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.id").value(id));
-        this.mockMvc.perform(get("/api/v1/plots").param("region", "25").header("Authorization", asFieldAgent()))
+        this.mockMvc.perform(get("/api/v1/plots").param("region", "15").header("Authorization", asFieldAgent()))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.plots[*].id").value(Matchers.hasItem(id)));
     }
@@ -75,7 +79,7 @@ class PlotControllerIT extends PostgresIntegrationTest {
         int plot = PLOTS.incrementAndGet();
 
         this.register(asAdmin(), plot).andExpect(status().isCreated());
-        this.mockMvc.perform(get("/api/v1/plots").param("region", "2501").header("Authorization", asAdmin()))
+        this.mockMvc.perform(get("/api/v1/plots").param("region", "1510").header("Authorization", asAdmin()))
             .andExpect(status().isOk());
     }
 
@@ -101,6 +105,22 @@ class PlotControllerIT extends PostgresIntegrationTest {
     }
 
     @Test
+    void aPlotInNoDistrictIsRefused() throws Exception {
+        this.mockMvc.perform(post("/api/v1/plots")
+                .header("Authorization", asFieldAgent())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"ownerDocumentType": "DNI", "ownerDocumentNumber": "%s", "utmZone": "ZONE_18S",
+                     "boundary": [
+                        {"easting": 100000, "northing": 8600000},
+                        {"easting": 100100, "northing": 8600000},
+                        {"easting": 100100, "northing": 8600100}
+                     ]}""".formatted(ownerOf(PLOTS.incrementAndGet())))
+            )
+            .andExpect(status().isUnprocessableContent());
+    }
+
+    @Test
     void anUnknownPlotAndABeneficiaryWithoutOneAreNotFound() throws Exception {
         this.mockMvc.perform(get("/api/v1/plots/{id}", UUID.randomUUID()).header("Authorization", asFieldAgent()))
             .andExpect(status().isNotFound());
@@ -118,6 +138,73 @@ class PlotControllerIT extends PostgresIntegrationTest {
             .andExpect(status().isUnprocessableContent());
     }
 
+    @Test
+    void aMapViewAnswersThePlotsTouchingItAsGeoJson() throws Exception {
+        int plot = PLOTS.incrementAndGet();
+        String id = this.register(asFieldAgent(), plot)
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString()
+            .replaceAll(".*\"id\":\"([^\"]+)\".*", "$1");
+
+        // Zone 18S, 400 km east and 8,600 km north: around 75.9 degrees west and 12.6 south.
+        this.mockMvc.perform(get("/api/v1/plots/within")
+                .param("bbox", "-76.5,-13.0,-75.5,-12.0")
+                .header("Authorization", asFieldAgent())
+            )
+            .andExpect(status().isOk())
+            .andExpect(header().string("Cache-Control", "max-age=60, private"))
+            .andExpect(header().stringValues("Vary", Matchers.hasItem("Authorization")))
+            .andExpect(jsonPath("$.type").value("FeatureCollection"))
+            .andExpect(jsonPath("$.truncated").value(false))
+            .andExpect(jsonPath("$.features[?(@.id == '%s')].type".formatted(id)).value(Matchers.contains("Feature")))
+            .andExpect(jsonPath("$.features[?(@.id == '%s')].geometry.type".formatted(id))
+                .value(Matchers.contains("Polygon")))
+            .andExpect(jsonPath("$.features[?(@.id == '%s')].geometry.coordinates[0].length()".formatted(id))
+                .value(Matchers.contains(5)))
+            .andExpect(jsonPath("$.features[?(@.id == '%s')].geometry.coordinates[0][0][0]".formatted(id))
+                .value(Matchers.contains(near(-75.9))))
+            .andExpect(jsonPath("$.features[?(@.id == '%s')].geometry.coordinates[0][0][1]".formatted(id))
+                .value(Matchers.contains(near(-12.6))))
+            .andExpect(jsonPath("$.features[?(@.id == '%s')].properties.ubigeo".formatted(id))
+                .value(Matchers.contains(UBIGEO)));
+
+        this.mockMvc.perform(get("/api/v1/plots/within")
+                .param("bbox", "-70.5,-13.0,-70.0,-12.5")
+                .header("Authorization", asFieldAgent())
+            )
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.features[*].id").value(Matchers.not(Matchers.hasItem(id))));
+    }
+
+    @Test
+    void aMapViewThatIsNoBoundingBoxIsRefused() throws Exception {
+        for (String bbox : new String[] {"-76.5,-13.0,-75.5", "west,-13.0,-75.5,-12.0", "-75.5,-13.0,-76.5,-12.0", "-76.5,-13.0,-75.5,95"}) {
+            this.mockMvc.perform(get("/api/v1/plots/within").param("bbox", bbox).header("Authorization", asFieldAgent()))
+                .andExpect(status().isUnprocessableContent());
+        }
+    }
+
+    @Test
+    void aReviewerCannotReadAMapView() throws Exception {
+        this.mockMvc.perform(get("/api/v1/plots/within")
+                .param("bbox", "-76.5,-13.0,-75.5,-12.0")
+                .header("Authorization", asReviewer())
+            )
+            .andExpect(status().isForbidden());
+    }
+
+    /** Any number within 0.2 of the one given, whichever type the JSON parser read it as. */
+    private static Matcher<Object> near(double expected) {
+        return new CustomMatcher<>("a number within 0.2 of " + expected) {
+            @Override
+            public boolean matches(Object actual) {
+                return actual instanceof Number number && Math.abs(number.doubleValue() - expected) <= 0.2;
+            }
+        };
+    }
+
     private ResultActions register(String authorization, int plot) throws Exception {
         return this.mockMvc.perform(post("/api/v1/plots")
             .header("Authorization", authorization)
@@ -132,7 +219,7 @@ class PlotControllerIT extends PostgresIntegrationTest {
         int northing = 8_600_000;
 
         return """
-            {"ownerDocumentType": "DNI", "ownerDocumentNumber": "%s", "ubigeo": "%s", "utmZone": "ZONE_18S",
+            {"ownerDocumentType": "DNI", "ownerDocumentNumber": "%s", "utmZone": "ZONE_18S",
              "boundary": [
                 {"easting": %d, "northing": %d},
                 {"easting": %d, "northing": %d},
@@ -140,7 +227,6 @@ class PlotControllerIT extends PostgresIntegrationTest {
                 {"easting": %d, "northing": %d}
              ]}""".formatted(
             owner,
-            UBIGEO,
             easting, northing,
             easting + 100, northing,
             easting + 100, northing + 100,
