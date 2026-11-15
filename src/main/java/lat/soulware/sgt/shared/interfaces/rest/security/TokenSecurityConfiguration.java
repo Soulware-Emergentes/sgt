@@ -1,8 +1,5 @@
 package lat.soulware.sgt.shared.interfaces.rest.security;
 
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -12,9 +9,6 @@ import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtClaimValidator;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 /**
  * Admits a request only with a bearer token staff issued: signed with one of the keys staff
@@ -41,7 +35,6 @@ public class TokenSecurityConfiguration {
     @Bean
     SecurityFilterChain tokenSecurity(HttpSecurity http, UnauthenticatedEntryPoint entryPoint) throws Exception {
         return http.csrf(csrf -> csrf.disable())
-            .cors(Customizer.withDefaults())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(requests -> requests
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
@@ -58,18 +51,5 @@ public class TokenSecurityConfiguration {
     @Bean
     OAuth2TokenValidator<Jwt> personTokensOnly() {
         return new JwtClaimValidator<String>(TOKEN_USE_CLAIM, PERSON_TOKEN_USE::equals);
-    }
-
-    /** Lets the frontend call sgt from the browser. */
-    @Bean
-    CorsConfigurationSource corsConfigurationSource(@Value("${sgt.web.origin}") String webOrigin) {
-        CorsConfiguration cors = new CorsConfiguration();
-        cors.setAllowedOrigins(List.of(webOrigin));
-        cors.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
-        cors.setAllowedHeaders(List.of("Authorization", "Content-Type"));
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/api/**", cors);
-        return source;
     }
 }

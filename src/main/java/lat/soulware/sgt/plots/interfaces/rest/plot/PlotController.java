@@ -1,12 +1,8 @@
 package lat.soulware.sgt.plots.interfaces.rest.plot;
 
-import java.time.Duration;
 import java.util.UUID;
 
-import org.springframework.http.CacheControl;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -39,8 +35,6 @@ import lat.soulware.sgt.shared.interfaces.rest.security.Caller;
 @RestController
 @RequestMapping("/api/v1")
 public class PlotController {
-
-    private static final Duration MAP_VIEW_FRESHNESS = Duration.ofMinutes(1);
 
     private final PlotCommandService plotCommandService;
     private final PlotQueryService plotQueryService;
@@ -79,26 +73,16 @@ public class PlotController {
         );
     }
 
-    /**
-     * A map asks for the same fixed cells again and again, so the browser may keep an answer for a
-     * minute. Only the browser, and only for the token that asked: what a view holds depends on who is
-     * looking.
-     */
     @Operation(summary = "Returns the plots touching a map view, as GeoJSON on WGS84")
     @GetMapping("/plots/within")
-    public ResponseEntity<PlotFeatureCollectionResponse> inView(
+    public PlotFeatureCollectionResponse inView(
         @Parameter(description = "west,south,east,north in degrees, such as -77.2,-12.2,-76.8,-11.9")
         @RequestParam String bbox,
         Caller caller
     ) {
-        PlotFeatureCollectionResponse plots = PlotWireMapper.toPlotFeatureCollectionResponse(
+        return PlotWireMapper.toPlotFeatureCollectionResponse(
             this.plotQueryService.inView(PlotWireMapper.toPlotsInView(bbox, caller))
         );
-
-        return ResponseEntity.ok()
-            .cacheControl(CacheControl.maxAge(MAP_VIEW_FRESHNESS).cachePrivate())
-            .varyBy(HttpHeaders.AUTHORIZATION)
-            .body(plots);
     }
 
     @Operation(summary = "Returns a plot by its id")
