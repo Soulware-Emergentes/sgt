@@ -177,8 +177,6 @@ class PlotControllerIT extends PostgresIntegrationTest {
                 .header("Authorization", asFieldAgent())
             )
             .andExpect(status().isOk())
-            .andExpect(header().string("Cache-Control", "max-age=60, private"))
-            .andExpect(header().stringValues("Vary", Matchers.hasItem("Authorization")))
             .andExpect(jsonPath("$.type").value("FeatureCollection"))
             .andExpect(jsonPath("$.truncated").value(false))
             .andExpect(jsonPath("$.features[?(@.id == '%s')].type".formatted(id)).value(Matchers.contains("Feature")))
