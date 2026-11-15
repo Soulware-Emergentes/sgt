@@ -137,6 +137,5 @@ public abstract class PostgresIntegrationTest {
         registry.add("monitoring.scans.secret-key", () -> "unused-in-tests");
         registry.add("spring.security.oauth2.resourceserver.jwt.issuer-uri", TestTokens::issuer);
         registry.add("spring.security.oauth2.resourceserver.jwt.audiences", () -> TestTokens.AUDIENCE);
-        registry.add("sgt.web.origin", () -> "http://localhost:4200");
     }
 }
