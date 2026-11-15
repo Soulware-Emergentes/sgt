@@ -1,0 +1,73 @@
+databases:
+  - name: sgt-dev-db
+    databaseName: sgt
+    user: sgt
+    plan: basic-256mb
+    region: oregon
+
+services:
+  - type: web
+    name: sgt-dev
+    runtime: docker
+    plan: free
+    region: oregon
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: dev
+      - key: PGHOST
+        fromDatabase: { name: sgt-dev-db, property: host }
+      - key: PGPORT
+        fromDatabase: { name: sgt-dev-db, property: port }
+      - key: PGDATABASE
+        fromDatabase: { name: sgt-dev-db, property: database }
+      - key: FLYWAY_URL
+        value: jdbc:postgresql://${PGHOST}:${PGPORT}/${PGDATABASE}
+      - key: FLYWAY_USERNAME
+        fromDatabase: { name: sgt-dev-db, property: user }
+      - key: FLYWAY_PASSWORD
+        fromDatabase: { name: sgt-dev-db, property: password }
+      # setup-roles.sql is not run on Render, so Flyway creates PostGIS itself.
+      - key: SPRING_FLYWAY_INITSQLS
+        value: CREATE EXTENSION IF NOT EXISTS postgis
+      - key: DB_URL
+        value: jdbc:postgresql://${PGHOST}:${PGPORT}/${PGDATABASE}
+      - key: DB_USERNAME
+        fromDatabase: { name: sgt-dev-db, property: user }
+      - key: DB_PASSWORD
+        fromDatabase: { name: sgt-dev-db, property: password }
+      - key: SERVER_PORT
+        value: "10000"
+      # Public URLs of the other services, e.g. https://beneficiarios-dev.onrender.com
+      - key: BENEFICIARIES_URL
+        sync: false
+      - key: DIRECTORY_URL
+        sync: false
+      - key: POI_URL
+        sync: false
+      - key: STAFF_ISSUER
+        sync: false
+      # Placeholders: no object store is deployed, the scan endpoints are not used.
+      - key: SCANS_ENDPOINT
+        value: http://unset.invalid
+      - key: SCANS_REGION
+        value: us-east-1
+      - key: SCANS_BUCKET
+        value: field-sheets
+      - key: SCANS_ACCESS_KEY
+        value: unset
+      - key: SCANS_SECRET_KEY
+        value: unset
+      - key: SGT_TOKEN_AUDIENCE
+        value: sgt-api-dev
+      - key: SGT_SERVICE_CLIENT_ID
+        value: sgt-service-dev
+      - key: SGT_SERVICE_CLIENT_SECRET
+        value: sgt-service-dev-secret
+      - key: POI_TOKEN_AUDIENCE
+        value: poi-api-dev
+      - key: DIRECTORY_TOKEN_AUDIENCE
+        value: staff-directory-api-dev
+      - key: BENEFICIARIES_TOKEN_AUDIENCE
+        value: beneficiarios-api-dev
+      - key: API_DOCS_ENABLED
+        value: "true"
