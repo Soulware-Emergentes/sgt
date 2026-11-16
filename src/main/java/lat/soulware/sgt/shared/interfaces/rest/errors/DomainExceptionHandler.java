@@ -1,6 +1,7 @@
 package lat.soulware.sgt.shared.interfaces.rest.errors;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -61,7 +62,7 @@ public class DomainExceptionHandler {
             .toList();
 
         return ResponseEntity.status(status)
-            .body(ValidationErrorResponse.of(status, this.resolve(failure), fields));
+            .body(ValidationErrorResponse.of(status, failure.getMessageKey(), this.resolve(failure), fields));
     }
 
     /**
@@ -75,7 +76,7 @@ public class DomainExceptionHandler {
         HttpStatus status = statusOf(failure);
 
         return ResponseEntity.status(status)
-            .body(ErrorResponse.of(status, this.resolve(failure)));
+            .body(ErrorResponse.of(status, failure.getMessageKey(), this.resolve(failure), detailsOf(failure)));
     }
 
     /** The mapping itself, and the only statement of it. */
@@ -86,6 +87,11 @@ public class DomainExceptionHandler {
             case EntityNotFoundException _ -> HttpStatus.NOT_FOUND;
             case BusinessRuleViolationException _ -> HttpStatus.UNPROCESSABLE_CONTENT;
         };
+    }
+
+    /** The failure's details, when it is one that carries them. */
+    private static Map<String, Object> detailsOf(DomainException failure) {
+        return failure instanceof DomainException.Detailed detailed ? detailed.details() : null;
     }
 
     /** Resolves a failure's own key against its arguments. */

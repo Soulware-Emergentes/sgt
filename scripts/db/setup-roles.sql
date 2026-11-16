@@ -26,6 +26,11 @@ CREATE DATABASE sgt OWNER sgt_migrator;
 
 \connect sgt
 
+-- PostGIS is not a trusted extension, so only a superuser can create it.
+-- Creating it here keeps sgt_migrator free of that privilege, and
+-- migrations use its types and functions as if they were built in.
+CREATE EXTENSION postgis;
+
 -- sgt_app only needs to connect and use the public schema - it does not
 -- own anything here, so by default it has no privileges on the tables
 -- sgt_migrator creates (ownership does not imply privileges in Postgres).

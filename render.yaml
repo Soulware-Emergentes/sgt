@@ -1,0 +1,60 @@
+services:
+  - type: web
+    name: sgt-dev
+    runtime: docker
+    plan: free
+    region: oregon
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: dev
+      - key: FLYWAY_URL
+        sync: false
+      - key: FLYWAY_USERNAME
+        sync: false
+      - key: FLYWAY_PASSWORD
+        sync: false
+      # setup-roles.sql is not run on Render, so Flyway creates PostGIS itself.
+      - key: SPRING_FLYWAY_INITSQLS
+        value: CREATE EXTENSION IF NOT EXISTS postgis
+      - key: DB_URL
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: SERVER_PORT
+        value: "10000"
+      # Public URLs of the other services, e.g. https://beneficiarios-dev.onrender.com
+      - key: BENEFICIARIES_URL
+        sync: false
+      - key: DIRECTORY_URL
+        sync: false
+      - key: POI_URL
+        sync: false
+      - key: STAFF_ISSUER
+        sync: false
+      # Placeholders: no object store is deployed, the scan endpoints are not used.
+      - key: SCANS_ENDPOINT
+        value: http://unset.invalid
+      - key: SCANS_REGION
+        value: us-east-1
+      - key: SCANS_BUCKET
+        value: field-sheets
+      - key: SCANS_ACCESS_KEY
+        value: unset
+      - key: SCANS_SECRET_KEY
+        value: unset
+      - key: SGT_TOKEN_AUDIENCE
+        value: sgt-api-dev
+      - key: SGT_SERVICE_CLIENT_ID
+        value: sgt-service-dev
+      - key: SGT_SERVICE_CLIENT_SECRET
+        value: sgt-service-dev-secret
+      - key: POI_TOKEN_AUDIENCE
+        value: poi-api-dev
+      - key: DIRECTORY_TOKEN_AUDIENCE
+        value: staff-directory-api-dev
+      - key: BENEFICIARIES_TOKEN_AUDIENCE
+        value: beneficiarios-api-dev
+      - key: API_DOCS_ENABLED
+        value: "true"
